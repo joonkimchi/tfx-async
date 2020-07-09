@@ -104,7 +104,7 @@ class BaseDriver(object):
       input_dict: Dict[Text, types.Channel],
       exec_properties: Dict[Text, Any],  # pylint: disable=unused-argument
       driver_args: data_types.DriverArgs,
-      pipeline_info: data_types.PipelineInfo,
+      pipeline_info: data_types.PipelineInfo
   ) -> Dict[Text, List[types.Artifact]]:
     """Resolve input artifacts from metadata.
 
@@ -142,12 +142,17 @@ class BaseDriver(object):
                 'components must first be run with '
                 '`interactive_context.run(component)` before their outputs can '
                 'be used in downstream components.') % (artifact, name))
-        result[name] = artifacts
+        result[name] = artifacts  
       else:
-        result[name] = self._metadata_handler.search_artifacts(
-            artifact_name=input_channel.output_key,
-            pipeline_info=pipeline_info,
-            producer_component_id=input_channel.producer_component_id)
+        try:
+        # catch exceptio for AttributeError when no previous execution exists; skip to next iteration
+          result[name] = self._metadata_handler.search_artifacts(
+              artifact_name=input_channel.output_key,
+              pipeline_info=pipeline_info,
+              producer_component_id=input_channel.producer_component_id)
+        except AttributeError:
+          absl.logging.info("No previous upstream component execution. Skip to next iteration.")
+          return None
         # TODO(ccy): add this code path to interactive resolution.
         for artifact in result[name]:
           if isinstance(artifact, types.ValueArtifact):
@@ -232,11 +237,16 @@ class BaseDriver(object):
       RuntimeError: if any input as an empty uri.
     """
     # Step 1. Fetch inputs from metadata.
+    absl.logging.info("component info")
+    absl.logging.info(component_info)
     exec_properties = self.resolve_exec_properties(exec_properties,
                                                    pipeline_info,
                                                    component_info)
     input_artifacts = self.resolve_input_artifacts(input_dict, exec_properties,
                                                    driver_args, pipeline_info)
+    if input_artifacts is None:
+      absl.logging.info("Cannot resolve input artifact without previous upstream node execution.")
+      return None
     self.verify_input_artifacts(artifacts_dict=input_artifacts)
     absl.logging.debug('Resolved input artifacts are: %s', input_artifacts)
     # Step 2. Register execution in metadata.
@@ -258,6 +268,7 @@ class BaseDriver(object):
           exec_properties=exec_properties,
           pipeline_info=pipeline_info,
           component_info=component_info)
+      absl.logging.info("inside cache")
     if output_artifacts is not None:
       # If cache should be used, updates execution to reflect that. Note that
       # with this update, publisher should / will be skipped.
@@ -268,8 +279,10 @@ class BaseDriver(object):
           execution_state=metadata.EXECUTION_STATE_CACHED,
           contexts=contexts)
       use_cached_results = True
+      absl.logging.info("skipping publisher")
     else:
       absl.logging.debug('Cached results not found, move on to new execution')
+      absl.logging.info("new execution initiated")
       # Step 4a. New execution is needed. Prepare output artifacts.
       output_artifacts = self._prepare_output_artifacts(
           output_dict=output_dict,

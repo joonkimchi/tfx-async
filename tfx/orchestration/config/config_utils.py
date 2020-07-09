@@ -24,12 +24,13 @@ from tfx.components.base import base_component
 from tfx.orchestration.config import base_component_config
 from tfx.orchestration.config import pipeline_config
 from tfx.orchestration.launcher import base_component_launcher
+from tfx.orchestration.launcher import base_component_launcher_2
 
 
 def find_component_launch_info(
     p_config: pipeline_config.PipelineConfig,
     component: base_component.BaseComponent,
-) -> Tuple[Type[base_component_launcher.BaseComponentLauncher],
+) -> Tuple[Type[base_component_launcher_2.BaseComponentLauncher2],
            Optional[base_component_config.BaseComponentConfig]]:
   """Find a launcher and component config to launch the component.
 

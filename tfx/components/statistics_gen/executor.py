@@ -128,6 +128,8 @@ class Executor(base_executor.BaseExecutor):
         input_tfxio = tf_example_record.TFExampleRecord(**tfxio_kwargs)
         output_uri = artifact_utils.get_split_uri(output_dict[STATISTICS_KEY],
                                                   split)
+        absl.logging.info("output uri is:")
+        absl.logging.info(output_uri)
         output_path = os.path.join(output_uri, _DEFAULT_FILE_NAME)
         data = p | 'TFXIORead[{}]'.format(split) >> input_tfxio.BeamSource()
         # TODO(b/153368237): Clean this up after a release post tfx 0.21.
