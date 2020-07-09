@@ -237,15 +237,14 @@ class BaseDriver(object):
       RuntimeError: if any input as an empty uri.
     """
     # Step 1. Fetch inputs from metadata.
-    absl.logging.info("component info")
     absl.logging.info(component_info)
     exec_properties = self.resolve_exec_properties(exec_properties,
                                                    pipeline_info,
                                                    component_info)
     input_artifacts = self.resolve_input_artifacts(input_dict, exec_properties,
                                                    driver_args, pipeline_info)
+    # Step 1.5 If no upstream node execution ready yet, skip to next iteration
     if input_artifacts is None:
-      absl.logging.info("Cannot resolve input artifact without previous upstream node execution.")
       return None
     self.verify_input_artifacts(artifacts_dict=input_artifacts)
     absl.logging.debug('Resolved input artifacts are: %s', input_artifacts)

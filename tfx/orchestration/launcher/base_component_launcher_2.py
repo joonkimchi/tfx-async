@@ -22,6 +22,7 @@ import abc
 from typing import Any, Dict, List, Optional, Text
 
 import absl
+import time
 from six import with_metaclass
 
 from tfx import types
@@ -31,8 +32,6 @@ from tfx.orchestration import data_types
 from tfx.orchestration import metadata
 from tfx.orchestration import publisher
 from tfx.orchestration.config import base_component_config
-
-import time
 
 
 class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
@@ -68,7 +67,6 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       ValueError: when component and component_config are not launchable by the
       launcher.
     """
-    absl.logging.info("loggin info about comp")
     absl.logging.info(component)
     self._pipeline_info = pipeline_info
     self._component_info = data_types.ComponentInfo(
@@ -201,35 +199,35 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       The execution decision of the launch.
     """
     while True:
-        absl.logging.info('NEW INTERATION')
-        absl.logging.info('Running driver for %s',
-                          self._component_info.component_id)
-        
-        execution_decision = self._run_driver(self._input_dict, self._output_dict,
-                                              self._exec_properties)
-        
-        # case triggers when downstream node starts up without upstream node
-        if execution_decision is None:
-          absl.logging.info("Moving to next iteration")
-          time.sleep(10)
-          continue
-
-        if not execution_decision.use_cached_results:
-          absl.logging.info('Running executor for %s',
-                            self._component_info.component_id)
-          self._run_executor(execution_decision.execution_id,
-                             execution_decision.input_dict,
-                             execution_decision.output_dict,
-                             execution_decision.exec_properties)
-
-        absl.logging.info('Running publisher for %s',
-                          self._component_info.component_id)
-        self._run_publisher(output_dict=execution_decision.output_dict)
-        
-        print("post execution")
-        print(data_types.ExecutionInfo)
-        print("sleeping")
+      absl.logging.info('New iteration')
+      absl.logging.info('Running driver for %s',
+                        self._component_info.component_id)
+      
+      execution_decision = self._run_driver(self._input_dict, self._output_dict,
+                                            self._exec_properties)
+      
+      # case triggers when downstream node starts up without upstream node
+      if execution_decision is None:
+        absl.logging.info('Skipping to next iteration')
         time.sleep(10)
+        continue
+
+      if not execution_decision.use_cached_results:
+        absl.logging.info('Running executor for %s',
+                          self._component_info.component_id)
+        self._run_executor(execution_decision.execution_id,
+                            execution_decision.input_dict,
+                            execution_decision.output_dict,
+                            execution_decision.exec_properties)
+
+      absl.logging.info('Running publisher for %s',
+                        self._component_info.component_id)
+      self._run_publisher(output_dict=execution_decision.output_dict)
+      
+      print("post execution")
+      print(data_types.ExecutionInfo)
+      print("sleeping")
+      time.sleep(10)
 
 #     return data_types.ExecutionInfo(
 #         input_dict=execution_decision.input_dict,
