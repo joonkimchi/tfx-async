@@ -204,6 +204,7 @@ class Artifact(json_utils.Jsonable):
     if name == '_artifact_type':
       # Prevent infinite recursion when used with copy.deepcopy().
       raise AttributeError()
+    absl.logging.info(self._artifact_type.properties)
     if name not in self._artifact_type.properties:
       raise AttributeError('Artifact has no property %r.' % name)
     property_mlmd_type = self._artifact_type.properties[name]
@@ -285,8 +286,8 @@ class Artifact(json_utils.Jsonable):
     self._artifact.type_id = artifact_type.id
 
   def __repr__(self):
-    return 'Artifact(type_name: {}, uri: {}, id: {})'.format(
-        self._artifact_type.name, self.uri, str(self.id))
+    return 'Artifact(artifact: {}, artifact_type: {})'.format(
+        str(self._artifact), str(self._artifact_type))
 
   def to_json_dict(self) -> Dict[Text, Any]:
     return {
@@ -383,6 +384,11 @@ class Artifact(json_utils.Jsonable):
   def type_id(self, type_id: int):
     """Set id of underlying artifact type."""
     self._artifact.type_id = type_id
+
+  @property
+  def last_update_time_since_epoch(self) -> int:
+    """Last update time of artifact."""
+    return self._artifact.last_update_time_since_epoch
 
   # System-managed properties for all artifact types. Will be deprecated soon
   # in favor of a unified getter / setter interface and MLMD context.

@@ -145,7 +145,7 @@ class BaseDriver(object):
         result[name] = artifacts  
       else:
         try:
-        # catch exceptio for AttributeError when no previous execution exists; skip to next iteration
+        # catch exception for AttributeError when no previous execution exists; skip to next iteration
           result[name] = self._metadata_handler.search_artifacts(
               artifact_name=input_channel.output_key,
               pipeline_info=pipeline_info,
@@ -243,9 +243,15 @@ class BaseDriver(object):
                                                    component_info)
     input_artifacts = self.resolve_input_artifacts(input_dict, exec_properties,
                                                    driver_args, pipeline_info)
+    
     # Step 1.5 If no upstream node execution ready yet, skip to next iteration
     if input_artifacts is None:
       return None
+    # Sort and filter for the most recently updated artifact
+    else:
+      input_artifacts['input'] = [sorted(input_artifacts['input'], 
+                                  key=lambda artifact: artifact.last_update_time_since_epoch)[-1]]
+
     self.verify_input_artifacts(artifacts_dict=input_artifacts)
     absl.logging.debug('Resolved input artifacts are: %s', input_artifacts)
     # Step 2. Register execution in metadata.
