@@ -150,7 +150,7 @@ class BaseDriver(object):
               artifact_name=input_channel.output_key,
               pipeline_info=pipeline_info,
               producer_component_id=input_channel.producer_component_id)
-        except AttributeError:
+        except (AttributeError, RuntimeError):
           absl.logging.info("No previous upstream component execution. Skip to next iteration.")
           return None
         # TODO(ccy): add this code path to interactive resolution.
@@ -249,7 +249,9 @@ class BaseDriver(object):
       return None
     # Sort and filter for the most recently updated artifact
     else:
-      input_artifacts['input'] = [sorted(input_artifacts['input'], 
+      input_key = next(iter(input_artifacts))
+      absl.logging.info(input_artifacts)
+      input_artifacts[input_key] = [sorted(input_artifacts[input_key], 
                                   key=lambda artifact: artifact.last_update_time_since_epoch)[-1]]
 
     self.verify_input_artifacts(artifacts_dict=input_artifacts)
