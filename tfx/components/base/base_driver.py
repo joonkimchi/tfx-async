@@ -269,13 +269,13 @@ class BaseDriver(object):
     output_artifacts = None
 
     if driver_args.enable_cache:
+      absl.logging.info("inside cache")
       # Step 3. Decide whether a new execution is needed.
       output_artifacts = self._metadata_handler.get_cached_outputs(
           input_artifacts=input_artifacts,
           exec_properties=exec_properties,
           pipeline_info=pipeline_info,
           component_info=component_info)
-      absl.logging.info("inside cache")
     if output_artifacts is not None:
       # If cache should be used, updates execution to reflect that. Note that
       # with this update, publisher should / will be skipped.

@@ -908,23 +908,16 @@ class Metadata(object):
     # TODO(ruoyu): We need to revisit this when adding support for async
     # execution.
     context = self.get_pipeline_run_context(pipeline_info)
-    # if context is None:
-    #   context = self.get_component_run_context(component_info)
-    #   absl.logging.info("inside the none")
-    #   absl.logging.info(component_info)
-      # raise RuntimeError('Pipeline run context for %s does not exist' %
-      #                    pipeline_info)
-    # if context is None:
-    #   context = self.get_pipeline_context(pipeline_info)
-    #   absl.logging.info("inside the none2")
-    #   absl.logging.info(pipeline_info)
 
     for execution in self.store.get_executions_by_context(context.id):
+      # Make sure that state of execution is 'complete'; if no valid execution, skip to next iteration.
       if execution.properties[
-          'component_id'].string_value == producer_component_id:
+          'component_id'].string_value == producer_component_id and execution.properties[
+          _EXECUTION_TYPE_KEY_STATE].string_value == tf.compat.as_text(EXECUTION_STATE_COMPLETE):
         producer_execution = execution
         break
     if not producer_execution:
+      absl.logging.info('Cannot find valid execution')
       raise RuntimeError('Cannot find matching execution with pipeline name %s,'
                          'run id %s and component id %s' %
                          (pipeline_info.pipeline_name, pipeline_info.run_id,
@@ -946,9 +939,16 @@ class Metadata(object):
 
     result_artifacts = []
     for a in artifacts_by_id:
-      tfx_artifact = artifact_utils.deserialize_artifact(
-          artifact_types[a.type_id], a)
-      result_artifacts.append(tfx_artifact)
+      # Make sure that state of artifact is published; if none have been published, skip to next iteration.
+      if self._get_artifact_state(a) == ArtifactState.PUBLISHED:
+        tfx_artifact = artifact_utils.deserialize_artifact(
+            artifact_types[a.type_id], a)
+        result_artifacts.append(tfx_artifact)
+    if not result_artifacts:
+      absl.logging.info('Cannot find published input artifacts for execution with id %s' % 
+                          producer_execution.id)
+      raise RuntimeError('Cannot find published artifacts for execution with id %s' %
+                          producer_execution.id)
     return result_artifacts
 
   def _register_context_type_if_not_exist(
