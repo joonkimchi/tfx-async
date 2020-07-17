@@ -204,7 +204,6 @@ class Artifact(json_utils.Jsonable):
     if name == '_artifact_type':
       # Prevent infinite recursion when used with copy.deepcopy().
       raise AttributeError()
-    absl.logging.info(self._artifact_type.properties)
     if name not in self._artifact_type.properties:
       raise AttributeError('Artifact has no property %r.' % name)
     property_mlmd_type = self._artifact_type.properties[name]

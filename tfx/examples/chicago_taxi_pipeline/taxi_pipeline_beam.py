@@ -164,9 +164,9 @@ def _create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
       pipeline_name=pipeline_name,
       pipeline_root=pipeline_root,
       components=[
-        #   example_gen,
+           example_gen,
            statistics_gen,
-           schema_gen,
+        #   schema_gen,
         #   example_validator,
         #   transform,
         #   trainer,
@@ -197,15 +197,3 @@ if __name__ == '__main__':
       # 0 means auto-detect based on the number of CPUs available during
       # execution time.
       direct_num_workers=0))
-
-#   BeamDagRunner().run(
-#       _create_pipeline(
-#           pipeline_name=_pipeline_name,
-#           pipeline_root=_pipeline_root,
-#           data_root=path_data,
-#           module_file=_module_file,
-#           serving_model_dir=_serving_model_dir,
-#           metadata_path=_metadata_path,
-#           # 0 means auto-detect based on the number of CPUs available during
-#           # execution time.
-#           direct_num_workers=0))

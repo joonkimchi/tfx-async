@@ -237,7 +237,6 @@ class BaseDriver(object):
       RuntimeError: if any input as an empty uri.
     """
     # Step 1. Fetch inputs from metadata.
-    absl.logging.info(component_info)
     exec_properties = self.resolve_exec_properties(exec_properties,
                                                    pipeline_info,
                                                    component_info)
@@ -269,7 +268,6 @@ class BaseDriver(object):
     output_artifacts = None
 
     if driver_args.enable_cache:
-      absl.logging.info("inside cache")
       # Step 3. Decide whether a new execution is needed.
       output_artifacts = self._metadata_handler.get_cached_outputs(
           input_artifacts=input_artifacts,
@@ -289,7 +287,7 @@ class BaseDriver(object):
       absl.logging.info("skipping publisher")
     else:
       absl.logging.debug('Cached results not found, move on to new execution')
-      absl.logging.info("new execution initiated")
+      absl.logging.info('New execution initiated')
       # Step 4a. New execution is needed. Prepare output artifacts.
       output_artifacts = self._prepare_output_artifacts(
           output_dict=output_dict,

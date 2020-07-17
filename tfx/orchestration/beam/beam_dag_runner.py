@@ -154,9 +154,6 @@ class BeamDagRunner(tfx_runner.TfxRunner):
           (component_launcher_class,
            component_config) = config_utils.find_component_launch_info(
                self._config, component)
-          
-          absl.logging.info(component_launcher_class)
-          absl.logging.info(component_config)
 
           # Each signal is an empty PCollection. AsIter ensures component will
           # be triggered after upstream components are finished.

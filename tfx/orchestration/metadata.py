@@ -662,19 +662,6 @@ class Metadata(object):
         artifact_and_events=artifacts_and_events,
         contexts=contexts + [component_run_context])
     execution.id = execution_id
-      #component_run_context.id = context_ids[-1]
-    # except tf.errors.AlreadyExistsError:
-    #   component_run_context = self.get_component_run_context(component_info)
-    #   absl.logging.debug(
-    #       'Component run context already exists. Reusing the context %s.',
-    #       component_run_context.name)
-    #   [previous_execution] = self.store.get_executions_by_context(
-    #       context_id=component_run_context.id)
-    #   execution.id = previous_execution.id
-    #   _, a_ids, _ = self.store.put_execution(
-    #       execution=execution,
-    #       artifact_and_events=artifacts_and_events,
-    #       contexts=contexts + [component_run_context])
     contexts.append(component_run_context)
     for artifact_and_event, a_id in zip(artifacts_and_events, a_ids):
       artifact_and_event[0].id = a_id
