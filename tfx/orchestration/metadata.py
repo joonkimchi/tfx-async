@@ -636,6 +636,8 @@ class Metadata(object):
     Returns:
       execution id of the new execution.
     """
+    for context in contexts:
+      assert(context.id)
     input_artifacts = input_artifacts or {}
     exec_properties = exec_properties or {}
     execution = self._prepare_execution(EXECUTION_STATE_NEW, exec_properties,
@@ -643,7 +645,7 @@ class Metadata(object):
     artifacts_and_events = self._artifact_and_event_pairs(
         artifact_dict=input_artifacts,
         event_type=metadata_store_pb2.Event.INPUT)
-    component_run_context = self._prepare_context(
+    component_run_context = self._register_context_if_not_exist(
         context_type_name=_CONTEXT_TYPE_COMPONENT_RUN,
         context_name=component_info.component_run_context_name,
         properties={
@@ -651,28 +653,15 @@ class Metadata(object):
             _CONTEXT_TYPE_KEY_RUN_ID: pipeline_info.run_id,
             _CONTEXT_TYPE_KEY_COMPONENT_ID: component_info.component_id
         })
+    absl.logging.info("Component run id is %s.", component_run_context.id)
     # Tries to register the execution along with a component run context. If the
     # context already exists, reuse the context and update the existing
     # execution.
-    try:
-      execution_id, a_ids, context_ids = self.store.put_execution(
-          execution=execution,
-          artifact_and_events=artifacts_and_events,
-          contexts=contexts + [component_run_context])
-      execution.id = execution_id
-      component_run_context.id = context_ids[-1]
-    except tf.errors.AlreadyExistsError:
-      component_run_context = self.get_component_run_context(component_info)
-      absl.logging.debug(
-          'Component run context already exists. Reusing the context %s.',
-          component_run_context.name)
-      [previous_execution] = self.store.get_executions_by_context(
-          context_id=component_run_context.id)
-      execution.id = previous_execution.id
-      _, a_ids, _ = self.store.put_execution(
-          execution=execution,
-          artifact_and_events=artifacts_and_events,
-          contexts=contexts + [component_run_context])
+    execution_id, a_ids, context_ids = self.store.put_execution(
+        execution=execution,
+        artifact_and_events=artifacts_and_events,
+        contexts=contexts + [component_run_context])
+    execution.id = execution_id
     contexts.append(component_run_context)
     for artifact_and_event, a_id in zip(artifacts_and_events, a_ids):
       artifact_and_event[0].id = a_id
@@ -694,7 +683,8 @@ class Metadata(object):
       exec_properties: execution properties for the execution to be published.
     """
     component_run_context = self.get_component_run_context(component_info)
-    [execution] = self.store.get_executions_by_context(component_run_context.id)
+    # Change made to fetch latest execution when context associated with many executions
+    execution = self.store.get_executions_by_context(component_run_context.id)[-1]
     contexts = [
         component_run_context,
         self.get_pipeline_run_context(component_info.pipeline_info),
@@ -905,15 +895,16 @@ class Metadata(object):
     # TODO(ruoyu): We need to revisit this when adding support for async
     # execution.
     context = self.get_pipeline_run_context(pipeline_info)
-    if context is None:
-      raise RuntimeError('Pipeline run context for %s does not exist' %
-                         pipeline_info)
+
     for execution in self.store.get_executions_by_context(context.id):
+      # Make sure that state of execution is 'complete'; if no valid execution, skip to next iteration.
       if execution.properties[
-          'component_id'].string_value == producer_component_id:
+          'component_id'].string_value == producer_component_id and execution.properties[
+          _EXECUTION_TYPE_KEY_STATE].string_value == tf.compat.as_text(EXECUTION_STATE_COMPLETE):
         producer_execution = execution
         break
     if not producer_execution:
+      absl.logging.info('Cannot find valid execution')
       raise RuntimeError('Cannot find matching execution with pipeline name %s,'
                          'run id %s and component id %s' %
                          (pipeline_info.pipeline_name, pipeline_info.run_id,
@@ -935,9 +926,16 @@ class Metadata(object):
 
     result_artifacts = []
     for a in artifacts_by_id:
-      tfx_artifact = artifact_utils.deserialize_artifact(
-          artifact_types[a.type_id], a)
-      result_artifacts.append(tfx_artifact)
+      # Make sure that state of artifact is published; if none have been published, skip to next iteration.
+      if self._get_artifact_state(a) == ArtifactState.PUBLISHED:
+        tfx_artifact = artifact_utils.deserialize_artifact(
+            artifact_types[a.type_id], a)
+        result_artifacts.append(tfx_artifact)
+    if not result_artifacts:
+      absl.logging.info('Cannot find published input artifacts for execution with id %s' % 
+                          producer_execution.id)
+      raise RuntimeError('Cannot find published artifacts for execution with id %s' %
+                          producer_execution.id)
     return result_artifacts
 
   def _register_context_type_if_not_exist(
