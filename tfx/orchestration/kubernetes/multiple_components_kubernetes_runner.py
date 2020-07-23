@@ -53,8 +53,8 @@ from tfx.utils import json_utils, kube_utils
 from google.protobuf import json_format
 import json
 
-# TODO CREATE IMAGE & UPLOAD TO GCR
-_TFX_DEV_IMAGE = 'gcr.io/tfx-joon/tfx'
+
+_TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev'
 
 _CONTAINER_ENTRYPOINT = [
     'python', '/TFX/project/tfx/tfx/orchestration/kubernetes/container_entrypoint.py'
