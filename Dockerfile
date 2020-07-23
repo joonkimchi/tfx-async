@@ -5,6 +5,6 @@ RUN PROTOC_ZIP=protoc-3.7.1-linux-x86_64.zip && unzip -o $PROTOC_ZIP -d /usr/loc
 RUN PROTOC_ZIP=protoc-3.7.1-linux-x86_64.zip && unzip -o $PROTOC_ZIP -d /usr/local 'include/*'
 RUN PROTOC_ZIP=protoc-3.7.1-linux-x86_64.zip && rm -f $PROTOC_ZIP
 
-RUN git clone https://github.com/jkim1014/tfx-async.git
+RUN git clone -b Option2 https://github.com/jkim1014/tfx-async.git
 WORKDIR /tfx-async
 RUN pip install -e .
