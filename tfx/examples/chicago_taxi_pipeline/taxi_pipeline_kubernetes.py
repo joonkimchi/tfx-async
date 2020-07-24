@@ -48,9 +48,8 @@ _pipeline_name = 'chicago_taxi_beam'
 # This example assumes that the taxi data is stored in a google cloud storage bucket
 # named tfx-taxi under tfx-template/data and the taxi utility function
 # is in the local tfx-src path.  Feel free to customize this as needed.
-_taxi_root = os.path.join('/', 'tfx-src', 'tfx', 'examples',
-                          'chicago_taxi_pipeline')
-_data_root = 'gs://tfx-taxi/tfx-template/data'
+_taxi_root = os.path.join(os.environ['HOME'], 'taxi')
+_data_root = 'gs://tfx-async-taxi/tfx-template/data'
 # Python module file to inject customized logic into the TFX components. The
 # Transform and Trainer both require user-defined functions to run successfully.
 _module_file = os.path.join(_taxi_root, 'taxi_utils.py')
@@ -58,12 +57,12 @@ _module_file = os.path.join(_taxi_root, 'taxi_utils.py')
 # example code and metadata library is relative to $HOME, but you can store
 # these files anywhere on your local filesystem.
 #_tfx_root = os.path.join(os.environ['HOME'], 'tfx')
-_tfx_root = 'gs://tfx-taxi/tfx-template/'
+_tfx_root = 'gs://tfx-async-taxi/tfx-template/'
 #_pipeline_root = os.path.join(_tfx_root, 'pipelines', _pipeline_name)
-_pipeline_root = 'gs://tfx-taxi/tfx-template/pipelines/'+ _pipeline_name
+_pipeline_root = 'gs://tfx-taxi/tfx-template/pipelines/' + _pipeline_name
 # Path which can be listened to by the model server.  Pusher will output the
 # trained model here.
-_serving_model_dir = os.path.join(_tfx_root, 'serving_model', _pipeline_name)
+_serving_model_dir = os.path.join(_taxi_root, 'serving_model', _pipeline_name)
 
 
 def create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
@@ -152,14 +151,14 @@ def create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
       pipeline_root=pipeline_root,
       components=[
           example_gen,
-          statistics_gen,
-          schema_gen,
-          example_validator,
-          transform,
-          trainer,
-          model_resolver,
-          evaluator,
-          pusher,
+        #   statistics_gen,
+        #   schema_gen,
+        #   example_validator,
+        #   transform,
+        #   trainer,
+        #   model_resolver,
+        #   evaluator,
+        #   pusher,
       ],
       enable_cache=False,
       metadata_connection_config=config,
