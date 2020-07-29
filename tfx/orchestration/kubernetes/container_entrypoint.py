@@ -349,7 +349,7 @@ from ml_metadata.proto import metadata_store_pb2
 
 from tfx.orchestration import data_types
 from tfx.orchestration import metadata
-from tfx.orchestration.launcher import base_component_launcher
+from tfx.orchestration.launcher import base_component_launcher_2
 from tfx.utils import import_utils
 from tfx.utils import json_utils
 from tfx.utils import telemetry_utils
@@ -364,7 +364,6 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--pipeline_name', type=str, required=True)
   parser.add_argument('--pipeline_root', type=str, required=True)
-  parser.add_argument('--run_id', type=str, required=True)
   parser.add_argument('--metadata_config', type=str, required=True)
   parser.add_argument('--beam_pipeline_args', type=str, required=True)
   parser.add_argument(
@@ -382,9 +381,9 @@ def main():
   component_launcher_class = import_utils.import_class_by_path(
       args.component_launcher_class_path)
   if not issubclass(component_launcher_class,
-                    base_component_launcher.BaseComponentLauncher):
+                    base_component_launcher_2.BaseComponentLauncher2):
     raise TypeError(
-        'component_launcher_class "%s" is not subclass of base_component_launcher.BaseComponentLauncher'
+        'component_launcher_class "%s" is not subclass of base_component_launcher_2.BaseComponentLauncher2'
         % component_launcher_class)
 
   metadata_config = metadata_store_pb2.ConnectionConfig()
@@ -400,7 +399,7 @@ def main():
           pipeline_root=args.pipeline_root,
           # Kubeflow uses workflow_id for the run_id. For refernece,
           # see tfx/orchestration/kubeflow/base_component.py
-          run_id=args.run_id
+          # run_id=args.run_id
       ),
       driver_args=driver_args,
       metadata_connection=metadata.Metadata(connection_config=metadata_config),
