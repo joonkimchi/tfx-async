@@ -58,7 +58,7 @@ import pathlib
 _TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev:latest'
 
 _CONTAINER_ENTRYPOINT = [
-    'python', '/tfx/tfx/orchestration/kubernetes/container_entrypoint.py'
+    'python', '/tfx-async/tfx/orchestration/kubernetes/container_entrypoint.py'
 ]
 
 _WRAPPER_SUFFIX = 'Wrapper'
