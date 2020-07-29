@@ -26,6 +26,8 @@ from tfx.orchestration.config import pipeline_config
 from tfx.orchestration.launcher import base_component_launcher
 from tfx.orchestration.launcher import base_component_launcher_2
 
+import absl
+
 
 def find_component_launch_info(
     p_config: pipeline_config.PipelineConfig,
@@ -58,7 +60,7 @@ def find_component_launch_info(
     # Add None to the end of the list to find launcher with no component
     # config
     component_configs = p_config.default_component_configs + [None]
-
+    
   for component_config in component_configs:
     for component_launcher_class in p_config.supported_launcher_classes:
       if component_launcher_class.can_launch(component.executor_spec,

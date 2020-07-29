@@ -22,9 +22,6 @@ import time
 import re
 from typing import Optional, Text, Type
 
-import absl
-from multiprocessing import Process
-
 from typing import Any, Callable, Dict, List, Optional, Text, cast
 
 from absl import logging
@@ -48,17 +45,23 @@ from tfx.orchestration.kubeflow import node_wrapper
 from tfx.orchestration.kubeflow import utils
 from tfx.orchestration.launcher import base_component_launcher_2
 from tfx.orchestration.launcher import kubernetes_component_launcher
+from tfx.orchestration.launcher import looped_kubernetes_launcher
 from tfx.orchestration.launcher import container_common
+from tfx.orchestration.launcher import in_process_component_launcher
 from tfx.utils import json_utils, kube_utils
 from google.protobuf import json_format
 import json
 
+import pathlib
 
-_TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev'
+
+_TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev:latest'
 
 _CONTAINER_ENTRYPOINT = [
-    'python', '/TFX/project/tfx/tfx/orchestration/kubernetes/container_entrypoint.py'
+    'python', '/tfx/tfx/orchestration/kubernetes/container_entrypoint.py'
 ]
+
+_WRAPPER_SUFFIX = 'Wrapper'
 
 # K8s pod monitoring
 def _pod_is_not_pending(resp: client.V1Pod):
@@ -99,6 +102,64 @@ def get_default_kubernetes_metadata_config(
   connection_config.mysql.password = ''
   return connection_config
 
+def _wrap_container_component(
+    component: base_node.BaseNode,
+    component_launcher_class:
+        Type[base_component_launcher_2.BaseComponentLauncher2],
+    component_config: Optional[base_component_config.BaseComponentConfig],
+    pipeline: tfx_pipeline.Pipeline,
+) -> base_node.BaseNode:
+  """Wrapper for container component.
+  Args:
+  component: Component to be executed.
+  component_launcher_class: The class of the launcher to launch the
+    component.
+  component_config: component config to launch the component.
+  pipeline: Logical pipeline that contains pipeline related information.
+  """
+
+  # Reference: tfx.orchestration.kubeflow.base_component
+  component_launcher_class_path = '.'.join([
+      component_launcher_class.__module__, component_launcher_class.__name__
+  ])
+
+  serialized_component = utils.replace_placeholder(
+      json_utils.dumps(node_wrapper.NodeWrapper(component)))
+
+  arguments = [
+      '--pipeline_name',
+      pipeline.pipeline_info.pipeline_name,
+      '--pipeline_root',
+      pipeline.pipeline_info.pipeline_root,
+      '--run_id',
+      pipeline.pipeline_info.run_id,
+      '--metadata_config',
+      json_format.MessageToJson(
+          message=get_default_kubernetes_metadata_config(),
+          preserving_proto_field_name=True),
+      '--beam_pipeline_args',
+      json.dumps(pipeline.beam_pipeline_args),
+      '--additional_pipeline_args',
+      json.dumps(pipeline.additional_pipeline_args),
+      '--component_launcher_class_path',
+      component_launcher_class_path,
+      '--serialized_component',
+      serialized_component,
+      '--component_config',
+      json_utils.dumps(component_config),
+  ]
+
+  # Outputs/Parameters fields are not used as they are contained in
+  # the serialized component. We add a suffix to the component id
+  # to avoid MLMD conflict when registering this component.
+  return container_component.create_container_component(
+      name=component.id + _WRAPPER_SUFFIX,
+      outputs={},
+      parameters={},
+      image=_TFX_DEV_IMAGE,
+      command=_CONTAINER_ENTRYPOINT + arguments
+  )()
+
 
 class MultCompKubernetesRunner(tfx_runner.TfxRunner):
   """Tfx runner on Kubernetes."""
@@ -114,7 +175,8 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     if config is None:
       config = pipeline_config.PipelineConfig(
           supported_launcher_classes=[
-              base_component_launcher_2.BaseComponentLauncher2,
+              looped_kubernetes_launcher.LoopedKubernetesLauncher,
+              in_process_component_launcher.InProcessComponentLauncher,
           ],
       )
     super(MultCompKubernetesRunner, self).__init__(config)
@@ -262,24 +324,42 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     Args:
       pipeline: Logical pipeline containing pipeline args and components.
     """
-
+    logging.info(pathlib.Path(__file__).parent.absolute())
     if not is_inside_cluster():
       return
 
     # Runs component in topological order
     for component in pipeline.components:
-      absl.logging.info('Launching %s' % component.id)
+      logging.info('Launching %s' % component.id)
       (component_launcher_class,
        component_config) = config_utils.find_component_launch_info(
            self._config, component)
+      if kubernetes_component_launcher.KubernetesComponentLauncher.can_launch(
+          component.executor_spec, component_config):
+        wrapped_component_launcher_class = component_launcher_class
+        wrapped_component_config = component_config
+
+      else:
+        wrapped_component = _wrap_container_component(
+            component=component,
+            component_launcher_class=component_launcher_class,
+            component_config=component_config,
+            pipeline=pipeline
+        )
+
+        # reload properties
+        (wrapped_component_launcher_class,
+         wrapped_component_config) = config_utils.find_component_launch_info(
+             self._config, wrapped_component)
+
       # Do launching
       pod_name = self._build_pod_name(pipeline.pipeline_info, component.id)
-      namespace = 'kubernetes'
+      namespace = 'default'
       core_api = kube_utils.make_core_v1_api()
       pod_manifest = self._build_pod_manifest(pod_name, 
-                                              component,
-                                              component_launcher_class,
-                                              component_config,
+                                              wrapped_component,
+                                              wrapped_component_launcher_class,
+                                              wrapped_component_config,
                                               pipeline)
 
       if kube_utils.is_inside_kfp():
@@ -302,6 +382,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
           resp = core_api.create_namespaced_pod(
               namespace=namespace, body=pod_manifest)
         except client.rest.ApiException as e:
+          logging.info(e)
           raise RuntimeError(
               'Failed to created container executor pod!\nReason: %s\nBody: %s' %
               (e.reason, e.body))

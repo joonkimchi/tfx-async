@@ -24,6 +24,7 @@ from typing import Text
 
 from kubernetes import client as k8s_client
 from kubernetes import config as k8s_config
+import absl
 
 # Name of the main container that Argo workflow launches. As KFP internally uses
 # Argo, container name for the KFP Pod is also the same.
@@ -88,8 +89,10 @@ class _KubernetesClientFactory(object):
   def inside_cluster(self):
     """Whether current environment is inside the kubernetes cluster."""
     if not self._config_loaded:
+      absl.logging.info("inside if")
       self._LoadConfig()
-    return self._inside_cluster
+    return self._config_loaded
+    #return self._inside_cluster
 
   def _LoadConfig(self) -> None:  # pylint: disable=invalid-name
     """Load the kubernetes client config.

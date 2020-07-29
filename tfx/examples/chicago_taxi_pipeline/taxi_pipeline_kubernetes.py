@@ -44,11 +44,12 @@ from tfx.types.standard_artifacts import ModelBlessing
 from tfx.utils.dsl_utils import external_input
 
 
-_pipeline_name = 'chicago_taxi_beam'
+_pipeline_name = 'chicago_taxi_kubernetes'
 # This example assumes that the taxi data is stored in a google cloud storage bucket
 # named tfx-taxi under tfx-template/data and the taxi utility function
 # is in the local tfx-src path.  Feel free to customize this as needed.
-_taxi_root = os.path.join(os.environ['HOME'], 'taxi')
+_taxi_root = os.path.join('/', 'TFX', 'project', 'tfx', 'tfx', 'examples',
+                          'chicago_taxi_pipeline')
 _data_root = 'gs://tfx-async-taxi/tfx-template/data'
 # Python module file to inject customized logic into the TFX components. The
 # Transform and Trainer both require user-defined functions to run successfully.
@@ -168,6 +169,7 @@ def create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
 
 if __name__ == '__main__':
   absl.logging.set_verbosity(absl.logging.INFO)
+  absl.logging.info("Running taxi kubernetes example")
 
   multiple_components_kubernetes_runner.MultCompKubernetesRunner().run(
       create_pipeline(
@@ -179,3 +181,5 @@ if __name__ == '__main__':
           # 0 means auto-detect based on the number of CPUs available during
           # execution time.
           direct_num_workers=0))
+
+  absl.logging.info("Finishing taxi kubernetes example")
