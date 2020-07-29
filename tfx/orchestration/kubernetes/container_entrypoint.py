@@ -35,6 +35,7 @@ from tfx.orchestration import data_types
 from tfx.orchestration.kubeflow import kubeflow_metadata_adapter
 from tfx.orchestration.kubeflow.proto import kubeflow_pb2
 from tfx.orchestration.launcher import base_component_launcher
+from tfx.orchestration.launcher import base_component_launcher_2
 from tfx.types import artifact
 from tfx.types import channel
 from tfx.utils import import_utils
@@ -293,9 +294,9 @@ def main():
   component_launcher_class = import_utils.import_class_by_path(
       args.component_launcher_class_path)
   if not issubclass(component_launcher_class,
-                    base_component_launcher.BaseComponentLauncher):
+                    base_component_launcher_2.BaseComponentLauncher2):
     raise TypeError(
-        'component_launcher_class "%s" is not subclass of base_component_launcher.BaseComponentLauncher'
+        'component_launcher_class "%s" is not subclass of base_component_launcher_2.BaseComponentLauncher2'
         % component_launcher_class)
 
   kubeflow_metadata_config = kubeflow_pb2.KubeflowMetadataConfig()

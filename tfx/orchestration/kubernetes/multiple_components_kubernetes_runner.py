@@ -133,7 +133,7 @@ def _wrap_container_component(
       pipeline.pipeline_info.pipeline_root,
       '--run_id',
       pipeline.pipeline_info.run_id,
-      '--metadata_config',
+      '--kubeflow_metadata_config',
       json_format.MessageToJson(
           message=get_default_kubernetes_metadata_config(),
           preserving_proto_field_name=True),
@@ -211,7 +211,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
         pipeline.pipeline_info.pipeline_name,
         '--pipeline_root',
         pipeline.pipeline_info.pipeline_root,
-        '--metadata_config',
+        '--kubeflow_metadata_config',
         json_format.MessageToJson(
           message=get_default_kubernetes_metadata_config(),
           preserving_proto_field_name=True),
@@ -324,7 +324,6 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     Args:
       pipeline: Logical pipeline containing pipeline args and components.
     """
-    logging.info(pathlib.Path(__file__).parent.absolute())
     if not is_inside_cluster():
       return
 
