@@ -248,6 +248,7 @@ class BaseDriver(object):
       return None
     # Sort and filter for the most recently updated artifact
     else:
+      absl.logging.info(input_artifacts)
       input_key = next(iter(input_artifacts))
       absl.logging.info(input_artifacts)
       input_artifacts[input_key] = [sorted(input_artifacts[input_key], 

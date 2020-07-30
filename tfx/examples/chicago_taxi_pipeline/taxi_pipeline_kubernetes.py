@@ -38,6 +38,7 @@ from tfx.orchestration import pipeline
 from tfx.orchestration.kubernetes import multiple_components_kubernetes_runner
 from tfx.proto import pusher_pb2
 from tfx.proto import trainer_pb2
+from tfx.proto import example_gen_pb2
 from tfx.types import Channel
 from tfx.types.standard_artifacts import Model
 from tfx.types.standard_artifacts import ModelBlessing
@@ -65,6 +66,12 @@ _pipeline_root = 'gs://tfx-taxi/tfx-template/pipelines/' + _pipeline_name
 # trained model here.
 _serving_model_dir = os.path.join(_taxi_root, 'serving_model', _pipeline_name)
 
+_input = example_gen_pb2.Input(splits=[
+                example_gen_pb2.Input.Split(name='train',
+                                            pattern='span{SPAN}/train/*'),
+                example_gen_pb2.Input.Split(name='eval',
+                                            pattern='span{SPAN}/eval/*')
+            ])
 
 def create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
                     module_file: Text, serving_model_dir: Text,
@@ -73,7 +80,7 @@ def create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
   examples = external_input(data_root)
 
   # Brings data into the pipeline or otherwise joins/converts training data.
-  example_gen = CsvExampleGen(input=examples)
+  example_gen = CsvExampleGen(input=examples, input_config=_input)
 
   # Computes statistics over data for visualization and example validation.
   statistics_gen = StatisticsGen(examples=example_gen.outputs['examples'])
