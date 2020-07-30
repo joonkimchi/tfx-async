@@ -129,6 +129,7 @@ class BaseDriver(object):
       ValueError: if in interactive mode, the given input channels have not been
         resolved.
     """
+    absl.logging.info("****INSIDE BASE DRIVER****")
     result = {}
     for name, input_channel in input_dict.items():
       if driver_args.interactive_resolution:

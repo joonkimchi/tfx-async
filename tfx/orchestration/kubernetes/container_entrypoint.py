@@ -377,6 +377,8 @@ def main():
   args = parser.parse_args()
 
   component = json_utils.loads(args.serialized_component)
+  logging.info('***SERIALIZED INSIDE ENTRYPOINT***')
+  logging.info(args.serialized_component)
   component_config = json_utils.loads(args.component_config)
   component_launcher_class = import_utils.import_class_by_path(
       args.component_launcher_class_path)
@@ -388,7 +390,7 @@ def main():
 
   metadata_config = metadata_store_pb2.ConnectionConfig()
   json_format.Parse(args.metadata_config, metadata_config)
-  driver_args = data_types.DriverArgs(enable_cache=args.enable_cache)
+  driver_args = data_types.DriverArgs()
   beam_pipeline_args = json.loads(args.beam_pipeline_args)
   additional_pipeline_args = json.loads(args.additional_pipeline_args)
 

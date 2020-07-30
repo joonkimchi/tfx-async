@@ -54,6 +54,8 @@ import json
 
 import pathlib
 
+# LOCAL DOCKER TEST
+from tfx.orchestration.launcher import docker_component_launcher
 
 _TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev:latest'
 
@@ -61,7 +63,7 @@ _CONTAINER_ENTRYPOINT = [
     'python', '/tfx-async/tfx/orchestration/kubernetes/container_entrypoint.py'
 ]
 
-_WRAPPER_SUFFIX = 'Wrapper'
+_WRAPPER_SUFFIX = ''
 
 # K8s pod monitoring
 def _pod_is_not_pending(resp: client.V1Pod):
@@ -125,6 +127,9 @@ def _wrap_container_component(
 
   serialized_component = utils.replace_placeholder(
       json_utils.dumps(node_wrapper.NodeWrapper(component)))
+
+  logging.info('***SERIALIZE INSIDE WRAP***')
+  logging.info(serialized_component)
 
   arguments = [
       '--pipeline_name',
@@ -205,6 +210,9 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
 
     serialized_component = utils.replace_placeholder(
         json_utils.dumps(node_wrapper.NodeWrapper(component)))
+      
+    logging.info('**SERIALIZE INSIDE POD MANIFEST***')
+    logging.info(serialized_component)
 
     arguments = [
         '--pipeline_name',
@@ -319,22 +327,17 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     pod_name = '%s-%s' % (pipeline_name, component_id[:50])
     return _sanitize_pod_name(pod_name)
 
-  def run(self, pipeline: tfx_pipeline.Pipeline) -> None:
-    """
-    Args:
-      pipeline: Logical pipeline containing pipeline args and components.
-    """
-    if not is_inside_cluster():
-      return
-
-    # Runs component in topological order
+  def docker_run(self, pipeline: tfx_pipeline.Pipeline) -> None:
     for component in pipeline.components:
+      metadata_connection = metadata.Metadata(
+        pipeline.metadata_connection_config)
       logging.info('Launching %s' % component.id)
       (component_launcher_class,
        component_config) = config_utils.find_component_launch_info(
            self._config, component)
-      if kubernetes_component_launcher.KubernetesComponentLauncher.can_launch(
+      if docker_component_launcher.DockerComponentLauncher.can_launch(
           component.executor_spec, component_config):
+        wrapped_component = component
         wrapped_component_launcher_class = component_launcher_class
         wrapped_component_config = component_config
 
@@ -351,14 +354,69 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
          wrapped_component_config) = config_utils.find_component_launch_info(
              self._config, wrapped_component)
 
+      driver_args = data_types.DriverArgs()
+      metadata_connection = metadata.Metadata(
+        tfx_pipeline.metadata_connection_config)
+
+      self._component_launcher = component_launcher_class.create(
+        component=component,
+        pipeline_info=pipeline.pipeline_info,
+        driver_args=driver_args,
+        metadata_connection=metadata_connection,
+        beam_pipeline_args=pipeline.beam_pipeline_args,
+        additional_pipeline_args=pipeline.additional_pipeline_args,
+        component_config=component_config)
+
+      absl.logging.info("launching docker")
+      self._component_launcher.launch()
+
+
+  def run(self, pipeline: tfx_pipeline.Pipeline) -> None:
+    """
+    Args:
+      pipeline: Logical pipeline containing pipeline args and components.
+    """
+    if not is_inside_cluster():
+      return
+
+    # Runs component in topological order
+    for component in pipeline.components:
+      logging.info('Launching %s' % component.id)
+      logging.info('**TOP***')
+      logging.info(component.exec_properties)
+      (component_launcher_class,
+       component_config) = config_utils.find_component_launch_info(
+           self._config, component)
+
+      # if kubernetes_component_launcher.KubernetesComponentLauncher.can_launch(
+      #     component.executor_spec, component_config):
+      #   wrapped_component_launcher_class = component_launcher_class
+      #   wrapped_component_config = component_config
+
+      # else:
+      #   wrapped_component = _wrap_container_component(
+      #       component=component,
+      #       component_launcher_class=component_launcher_class,
+      #       component_config=component_config,
+      #       pipeline=pipeline
+      #   )
+
+      #   # reload properties
+      #   (wrapped_component_launcher_class,
+      #    wrapped_component_config) = config_utils.find_component_launch_info(
+      #        self._config, wrapped_component)
+
+      logging.info('***BETWEEN')
+      logging.info(component.exec_properties)
+
       # Do launching
       pod_name = self._build_pod_name(pipeline.pipeline_info, component.id)
       namespace = 'default'
       core_api = kube_utils.make_core_v1_api()
       pod_manifest = self._build_pod_manifest(pod_name, 
-                                              wrapped_component,
-                                              wrapped_component_launcher_class,
-                                              wrapped_component_config,
+                                              component,
+                                              component_launcher_class,
+                                              component_config,
                                               pipeline)
 
       if kube_utils.is_inside_kfp():

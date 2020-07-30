@@ -28,11 +28,11 @@ from six import with_metaclass
 from tfx import types
 from tfx.components.base import base_node
 from tfx.components.base import executor_spec
+from tfx.components.example_gen import driver as example_gen_driver
 from tfx.orchestration import data_types
 from tfx.orchestration import metadata
 from tfx.orchestration import publisher
 from tfx.orchestration.config import base_component_config
-
 
 class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
   """Responsible for launching driver, executor and publisher of component."""
@@ -74,8 +74,12 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
         component_id=component.id,
         pipeline_info=self._pipeline_info)
     self._driver_args = driver_args
-
-    self._driver_class = component.driver_class
+    absl.logging.info('****COMPONENT ID****')
+    absl.logging.info(component.id)
+    if 'CsvExampleGen' in component.id:
+      self._driver_class = example_gen_driver.Driver
+    else:
+      self._driver_class = component.driver_class
     self._component_executor_spec = component.executor_spec
 
     self._input_dict = component.inputs.get_all()
@@ -158,6 +162,8 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
 
     with self._metadata_connection as m:
       driver = self._driver_class(metadata_handler=m)
+      absl.logging.info("***DRIVER CLASS***")
+      absl.logging.info(driver)
 
       execution_decision = driver.pre_execution(
           input_dict=input_dict,

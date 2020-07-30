@@ -165,7 +165,7 @@ def _create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
       pipeline_root=pipeline_root,
       components=[
            example_gen,
-           statistics_gen,
+        #   statistics_gen,
         #   schema_gen,
         #   example_validator,
         #   transform,

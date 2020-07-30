@@ -48,9 +48,12 @@ class Driver(base_driver.BaseDriver):
     """Overrides BaseDriver.resolve_input_artifacts()."""
     del driver_args  # unused
     del pipeline_info  # unused
-
+    absl.logging.info('***EXEC props***')
+    absl.logging.info(exec_properties)
     input_config = example_gen_pb2.Input()
     json_format.Parse(exec_properties['input_config'], input_config)
+    absl.logging.info("*****INPUT CONFIG LOOKS LIKE*****")
+    absl.logging.info(input_config)
 
     input_dict = channel_utils.unwrap_channel_dict(input_channels)
     for input_list in input_dict.values():
