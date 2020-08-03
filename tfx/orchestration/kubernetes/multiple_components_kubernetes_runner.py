@@ -152,6 +152,8 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     logging.info('**SERIALIZE INSIDE POD MANIFEST***')
     logging.info(serialized_component)
 
+    logging.info(pipeline.pipeline_info.run_id)
+
     arguments = [
         '--pipeline_name',
         pipeline.pipeline_info.pipeline_name,
@@ -275,7 +277,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     """
     if not is_inside_cluster():
       return
-
+    pipeline.pipeline_info.run_id = datetime.datetime.now().isoformat()
     # Runs component in topological order
     for component in pipeline.components:
       logging.info('Launching %s' % component.id)
