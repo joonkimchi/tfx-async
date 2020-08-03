@@ -62,14 +62,9 @@ class LoopedKubernetesLauncher(base_component_launcher_2.BaseComponentLauncher2
       component_config: base_component_config.BaseComponentConfig = None
   ) -> bool:
     """Checks if the launcher can launch the executor spec."""
-    if component_config and not isinstance(
-        component_config,
-        kubernetes_component_config.KubernetesComponentConfig):
+    if component_config:
       return False
-
-    return isinstance(component_executor_spec,
-                      (executor_spec.ExecutorContainerSpec,
-                       executor_specs.TemplatedExecutorContainerSpec))
+    return isinstance(component_executor_spec, executor_spec.ExecutorClassSpec)
 
   def _run_executor(self, execution_id: int,
                     input_dict: Dict[Text, List[types.Artifact]],

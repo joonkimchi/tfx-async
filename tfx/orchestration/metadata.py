@@ -968,6 +968,8 @@ class Metadata(object):
     # TODO(ruoyu): Centralize the type definition / mapping along with Artifact
     # property types.
     properties = properties or {}
+    absl.logging.info('***PROPERTIES***')
+    absl.logging.info(properties)
     property_type_mapping = {
         int: metadata_store_pb2.INT,
         six.binary_type: metadata_store_pb2.STRING,

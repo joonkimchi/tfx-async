@@ -364,6 +364,7 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--pipeline_name', type=str, required=True)
   parser.add_argument('--pipeline_root', type=str, required=True)
+  parser.add_argument('--run_id', type=str, required=True)
   parser.add_argument('--metadata_config', type=str, required=True)
   parser.add_argument('--beam_pipeline_args', type=str, required=True)
   parser.add_argument(
