@@ -310,7 +310,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
 
       # Do launching
       pod_name = self._build_pod_name(pipeline.pipeline_info, component.id)
-      namespace = 'default'
+      namespace = 'kubernetes'
       core_api = kube_utils.make_core_v1_api()
       pod_manifest = self._build_pod_manifest(pod_name, 
                                               component,
