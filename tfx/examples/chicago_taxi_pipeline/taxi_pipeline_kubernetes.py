@@ -47,7 +47,7 @@ from tfx.utils.dsl_utils import external_input
 
 _pipeline_name = 'chicago_taxi_kubernetes'
 # This example assumes that the taxi data is stored in a google cloud storage bucket
-# named tfx-taxi under tfx-template/data and the taxi utility function
+# named tfx-async-taxi under tfx-template/data and the taxi utility function
 # is in the local tfx-src path.  Feel free to customize this as needed.
 _taxi_root = os.path.join('/', 'TFX', 'project', 'tfx', 'tfx', 'examples',
                           'chicago_taxi_pipeline')
@@ -61,7 +61,7 @@ _module_file = os.path.join(_taxi_root, 'taxi_utils.py')
 #_tfx_root = os.path.join(os.environ['HOME'], 'tfx')
 _tfx_root = 'gs://tfx-async-taxi/tfx-template/'
 #_pipeline_root = os.path.join(_tfx_root, 'pipelines', _pipeline_name)
-_pipeline_root = 'gs://tfx-taxi/tfx-template/pipelines/' + _pipeline_name
+_pipeline_root = 'gs://tfx-async-taxi/tfx-template/pipelines/' + _pipeline_name
 # Path which can be listened to by the model server.  Pusher will output the
 # trained model here.
 _serving_model_dir = os.path.join(_taxi_root, 'serving_model', _pipeline_name)

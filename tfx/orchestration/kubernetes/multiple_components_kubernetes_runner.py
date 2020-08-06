@@ -46,6 +46,7 @@ from tfx.orchestration.kubeflow import utils
 from tfx.orchestration.launcher import base_component_launcher_2
 from tfx.orchestration.launcher import kubernetes_component_launcher
 from tfx.orchestration.launcher import looped_kubernetes_launcher
+from tfx.orchestration.launcher import looped_component_launcher
 from tfx.orchestration.launcher import container_common
 from tfx.orchestration.launcher import in_process_component_launcher
 from tfx.utils import json_utils, kube_utils
@@ -119,7 +120,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     if config is None:
       config = pipeline_config.PipelineConfig(
           supported_launcher_classes=[
-              looped_kubernetes_launcher.LoopedKubernetesLauncher,
+              looped_component_launcher.LoopedComponentLauncher,
           ],
       )
     super(MultCompKubernetesRunner, self).__init__(config)
@@ -189,7 +190,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     metadata.update({'name': pod_name})
     spec = pod_manifest.setdefault('spec', {})  # type: Dict[Text, Any]
     # TODO IS THIS THE RIGHT RESTARTPOLICY?
-    spec.update({'restartPolicy': 'OnFailure'})
+    spec.update({'restartPolicy': 'OnFailure', 'serviceAccount':'async-ksa'})
     containers = spec.setdefault('containers',
                                  [])  # type: List[Dict[Text, Any]]
     container = None  # type: Optional[Dict[Text, Any]]
