@@ -52,6 +52,10 @@ class PodPhase(enum.Enum):
   @property
   def is_done(self):
     return self == self.SUCCEEDED or self == self.FAILED
+  
+  @property
+  def is_running(self):
+    return self == self.RUNNING
 
 
 class RestartPolicy(enum.Enum):

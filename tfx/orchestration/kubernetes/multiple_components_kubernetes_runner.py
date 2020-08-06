@@ -75,6 +75,10 @@ def _pod_is_done(resp: client.V1Pod):
   return kube_utils.PodPhase(resp.status.phase).is_done
 
 
+def _pod_is_running(resp: client.V1Pod):
+  return kube_utils.PodPhase(resp.status.phase).is_running
+
+
 def _sanitize_pod_name(pod_name: Text) -> Text:
   pod_name = re.sub(r'[^a-z0-9-]', '-', pod_name.lower())
   pod_name = re.sub(r'^[-]+', '', pod_name)
@@ -365,21 +369,25 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
             'Failed to stream the logs from the pod!\nReason: %s\nBody: %s' %
             (e.reason, e.body))
 
+      # Add limited time for logging to launch next pods
+      timeout = time.time() + 75
       for log in logs:
+        if time.time() > timeout:
+          break
         logging.info(log.decode().rstrip('\n'))
 
       resp = self._wait_pod(
           core_api,
           pod_name,
           namespace,
-          exit_condition_lambda=_pod_is_done,
-          condition_description='done state')
+          exit_condition_lambda=_pod_is_running,
+          condition_description='running state')
 
       if resp.status.phase == kube_utils.PodPhase.FAILED.value:
         raise RuntimeError('Pod "%s:%s" failed with status "%s".' %
                           (namespace, pod_name, resp.status))
 
-      logging.info('Pod "%s:%s" is done.', namespace, pod_name)
+      logging.info('Pod "%s:%s" is running. Launching next component.', namespace, pod_name)
 
 
 

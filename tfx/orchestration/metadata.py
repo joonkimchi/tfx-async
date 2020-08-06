@@ -895,9 +895,14 @@ class Metadata(object):
     # TODO(ruoyu): We need to revisit this when adding support for async
     # execution.
     context = self.get_pipeline_run_context(pipeline_info)
+    absl.logging.info("***CONTEXT MLMD***")
+    absl.logging.info(context)
 
     for execution in self.store.get_executions_by_context(context.id):
       # Make sure that state of execution is 'complete'; if no valid execution, skip to next iteration.
+      absl.logging.info(execution.properties)
+      absl.logging.info("****LOG****")
+      absl.logging.info(producer_component_id)
       if execution.properties[
           'component_id'].string_value == producer_component_id and execution.properties[
           _EXECUTION_TYPE_KEY_STATE].string_value == tf.compat.as_text(EXECUTION_STATE_COMPLETE):

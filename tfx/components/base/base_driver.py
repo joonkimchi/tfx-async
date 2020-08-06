@@ -146,6 +146,9 @@ class BaseDriver(object):
         result[name] = artifacts  
       else:
         try:
+          absl.logging.info("BASE DRIVER LOG ******")
+          absl.logging.info(input_channel)
+          absl.logging.info(input_channel.producer_component_id)
         # catch exception for AttributeError when no previous execution exists; skip to next iteration
           result[name] = self._metadata_handler.search_artifacts(
               artifact_name=input_channel.output_key,
