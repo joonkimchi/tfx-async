@@ -897,6 +897,7 @@ class Metadata(object):
     context = self.get_pipeline_run_context(pipeline_info)
     absl.logging.info("***CONTEXT MLMD***")
     absl.logging.info(context)
+    absl.logging.info(context.id)
 
     for execution in self.store.get_executions_by_context(context.id):
       # Make sure that state of execution is 'complete'; if no valid execution, skip to next iteration.
