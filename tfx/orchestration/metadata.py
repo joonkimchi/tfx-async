@@ -901,6 +901,7 @@ class Metadata(object):
 
     for execution in self.store.get_executions_by_context(context.id):
       # Make sure that state of execution is 'complete'; if no valid execution, skip to next iteration.
+      absl.logging.info("***PROPERTY***")
       absl.logging.info(execution.properties)
       absl.logging.info("****LOG****")
       absl.logging.info(producer_component_id)
