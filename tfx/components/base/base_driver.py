@@ -282,12 +282,12 @@ class BaseDriver(object):
     if output_artifacts is not None:
       # If cache should be used, updates execution to reflect that. Note that
       # with this update, publisher should / will be skipped.
-      self._metadata_handler.update_execution(
-          execution=execution,
-          component_info=component_info,
-          output_artifacts=output_artifacts,
-          execution_state=metadata.EXECUTION_STATE_CACHED,
-          contexts=contexts)
+      # self._metadata_handler.update_execution(
+      #     execution=execution,
+      #     component_info=component_info,
+      #     output_artifacts=output_artifacts,
+      #     execution_state=metadata.EXECUTION_STATE_CACHED,
+      #     contexts=contexts)
       use_cached_results = True
       absl.logging.info("skipping publisher")
     else:
