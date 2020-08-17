@@ -17,7 +17,6 @@ import pathlib
 
 _TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev:latest'
 
-template = ['ls', '-a']
 _CONTROLLER_ENTRYPOINT = ['python', '/tfx-async/tfx/orchestration/kubernetes/controller_entrypoint.py']
 
 
@@ -83,8 +82,7 @@ class ControllerCompiler:
       '--additional_pipeline_args',
       self._pipeline_params['additional_pipeline_args'],
       '--serialized_components',
-      []
-      #self._serialized_components,
+      str(self._serialized_components),
     ]
 
   def _serialize_args(self) -> None:
@@ -95,7 +93,7 @@ class ControllerCompiler:
 
 
   def _write_deployment_yaml(self) -> None:
-    #_replica_set_template['spec']['template']['spec']['containers'][0]['args'] = self.args_list
+    _replica_set_template['spec']['template']['spec']['containers'][0]['args'] = self.args_list
     
     with open(os.path.join(_TFX_DIR, "tfx/orchestration/kubernetes/controller.yaml"), "w") as f:
       deployment = yaml.dump(_replica_set_template, f)

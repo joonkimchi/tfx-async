@@ -21,6 +21,7 @@ import datetime
 import time
 import re
 import sys
+import ast
 from typing import Optional, Text, Type
 
 from typing import Any, Callable, Dict, List, Optional, Text, cast
@@ -286,9 +287,13 @@ def main():
 
   if not is_inside_cluster():
       return
+
+  logging.info(args.serialized_components)
+
+  listified_components = ast.literal_eval(args.serialized_components)
     
   # Runs component in topological order
-  for serialized_component in args.serialized_components:
+  for serialized_component in listified_components:
     component = deserialize_component(serialized_component)
     logging.info('Launching %s' % component.id)
     (component_launcher_class,
