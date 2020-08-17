@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - command:
-        - ls
-        - -a
+        - python
+        - /tfx-async/tfx/orchestration/kubernetes/controller_entrypoint.py
         image: gcr.io/joonkim-experiments/tfx_dev:latest
         name: controller

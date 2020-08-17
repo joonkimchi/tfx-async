@@ -8,3 +8,4 @@ RUN PROTOC_ZIP=protoc-3.7.1-linux-x86_64.zip && rm -f $PROTOC_ZIP
 RUN git clone -b Option2 https://github.com/jkim1014/tfx-async.git
 WORKDIR /tfx-async
 RUN pip install -e .
+RUN pip install kfp
