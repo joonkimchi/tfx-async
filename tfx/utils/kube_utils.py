@@ -93,7 +93,7 @@ class _KubernetesClientFactory(object):
   def inside_cluster(self):
     """Whether current environment is inside the kubernetes cluster."""
     if not self._config_loaded:
-      absl.logging.info("inside if")
+      absl.logging.info("Loading Config")
       self._LoadConfig()
     return self._config_loaded
     #return self._inside_cluster
@@ -128,6 +128,7 @@ class _KubernetesClientFactory(object):
       # filename from the KUBECONFIG environment variable.
       # It will raise kubernetes.config.ConfigException if no kube config file
       # is found.
+      absl.logging.info("Not inside cluster. Loading config out of cluster")
       self._inside_cluster = False
       k8s_config.load_kube_config()
 
@@ -138,6 +139,12 @@ class _KubernetesClientFactory(object):
     if not self._config_loaded:
       self._LoadConfig()
     return k8s_client.CoreV1Api()
+  
+  def MakeAppsV1Api(self) -> k8s_client.AppsV1Api:
+    """Make a kubernetes CoreV1Api client."""
+    if not self._config_loaded:
+      self._LoadConfig()
+    return k8s_client.AppsV1Api()
 
 
 _factory = _KubernetesClientFactory()
@@ -152,6 +159,11 @@ def _sanitize_pod_name(pod_name: Text) -> Text:
 def make_core_v1_api() -> k8s_client.CoreV1Api:
   """Make a kubernetes CoreV1Api client."""
   return _factory.MakeCoreV1Api()
+
+
+def make_apps_v1_api() -> k8s_client.AppsV1Api:
+  """Make a kubernetes AppsV1Api client."""
+  return _factory.MakeAppsV1Api()
 
 
 def is_inside_cluster() -> bool:

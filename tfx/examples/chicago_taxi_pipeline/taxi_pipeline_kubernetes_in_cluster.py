@@ -160,8 +160,8 @@ def create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
       pipeline_root=pipeline_root,
       components=[
           example_gen,
-          statistics_gen,
-          schema_gen,
+        #  statistics_gen,
+        #  schema_gen,
         #   example_validator,
         #  transform,
         #  trainer,
@@ -179,7 +179,7 @@ if __name__ == '__main__':
   absl.logging.set_verbosity(absl.logging.INFO)
   absl.logging.info("Running taxi kubernetes example")
 
-  multiple_components_kubernetes_runner.MultCompKubernetesRunner().run(
+  compiler.ControllerCompiler(
       create_pipeline(
           pipeline_name=_pipeline_name,
           pipeline_root=_pipeline_root,
@@ -188,6 +188,6 @@ if __name__ == '__main__':
           serving_model_dir=_serving_model_dir,
           # 0 means auto-detect based on the number of CPUs available during
           # execution time.
-          direct_num_workers=0))
+          direct_num_workers=0)).run_compiler()
 
   absl.logging.info("Finishing taxi kubernetes example")

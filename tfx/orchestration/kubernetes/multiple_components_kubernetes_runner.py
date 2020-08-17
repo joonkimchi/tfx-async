@@ -282,7 +282,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     """
     if not is_inside_cluster():
       return
-    pipeline.pipeline_info.run_id = datetime.datetime.now().isoformat()
+    pipeline.pipeline_info.run_id = c
     # Runs component in topological order
     for component in pipeline.components:
       logging.info('Launching %s' % component.id)
@@ -291,27 +291,6 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
       (component_launcher_class,
        component_config) = config_utils.find_component_launch_info(
            self._config, component)
-
-      # if kubernetes_component_launcher.KubernetesComponentLauncher.can_launch(
-      #     component.executor_spec, component_config):
-      #   wrapped_component_launcher_class = component_launcher_class
-      #   wrapped_component_config = component_config
-
-      # else:
-      #   wrapped_component = _wrap_container_component(
-      #       component=component,
-      #       component_launcher_class=component_launcher_class,
-      #       component_config=component_config,
-      #       pipeline=pipeline
-      #   )
-
-      #   # reload properties
-      #   (wrapped_component_launcher_class,
-      #    wrapped_component_config) = config_utils.find_component_launch_info(
-      #        self._config, wrapped_component)
-
-      logging.info('***BETWEEN')
-      logging.info(component.exec_properties)
 
       # Do launching
       pod_name = self._build_pod_name(pipeline.pipeline_info, component.id)
@@ -323,22 +302,12 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
                                               component_config,
                                               pipeline)
 
-      if kube_utils.is_inside_kfp():
-        launcher_pod = kube_utils.get_current_kfp_pod(core_api)
-        pod_manifest['spec']['serviceAccount'] = launcher_pod.spec.service_account
-        pod_manifest['spec'][
-            'serviceAccountName'] = launcher_pod.spec.service_account_name
-        pod_manifest['metadata'][
-            'ownerReferences'] = container_common.to_swagger_dict(
-                launcher_pod.metadata.owner_references)
-
       logging.info('Looking for pod "%s:%s".', namespace, pod_name)
       resp = self._get_pod(core_api, pod_name, namespace)
 
       if not resp:
         logging.info('Pod "%s:%s" does not exist. Creating it...',
                     namespace, pod_name)
-        logging.info('Pod manifest: %s', pod_manifest)
         try:
           resp = core_api.create_namespaced_pod(
               namespace=namespace, body=pod_manifest)
