@@ -3,10 +3,12 @@ kind: Deployment
 metadata:
   name: controller
 spec:
+  automountServiceAccountToken: false
   replicas: 3
   selector:
     matchLabels:
       app: controller
+  serviceAccount: async-ksa
   template:
     metadata:
       labels:
@@ -19,7 +21,7 @@ spec:
         - --pipeline_root
         - gs://tfx-async-taxi/tfx-template/pipelines/chicago_taxi_kubernetes
         - --run_id
-        - '2020-08-17T12:53:20.210608'
+        - '2020-08-17T13:34:59.944184'
         - --beam_pipeline_args
         - '["--direct_num_workers=0"]'
         - --additional_pipeline_args

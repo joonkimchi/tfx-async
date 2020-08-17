@@ -24,7 +24,8 @@ test_template = {}
 _replica_set_template = {'apiVersion': 'apps/v1', 'kind': 'Deployment',
                         'metadata': {'name': 'controller'},
                         'spec': 
-                          {'replicas': 3, 'selector': {'matchLabels': {'app': 'controller'}},
+                          {'replicas': 3, 'serviceAccount':'async-ksa', 'automountServiceAccountToken': False,
+                          'selector': {'matchLabels': {'app': 'controller'}},
                           'template': 
                             {'metadata': {'labels': {'app': 'controller'}}, 
                             'spec': {'containers': 
