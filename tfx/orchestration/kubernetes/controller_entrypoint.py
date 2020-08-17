@@ -116,23 +116,21 @@ def _build_pod_manifest(pod_name: Text,
   logging.info('**SERIALIZE INSIDE POD MANIFEST***')
   logging.info(serialized_component)
 
-  logging.info(pipeline.pipeline_info.run_id)
-
   arguments = [
       '--pipeline_name',
-      pipeline.pipeline_info.pipeline_name,
+      pipeline_name,
       '--pipeline_root',
-      pipeline.pipeline_info.pipeline_root,
+      pipeline_root,
       '--run_id',
-      pipeline.pipeline_info.run_id,
+      run_id,
       '--metadata_config',
       json_format.MessageToJson(
         message=get_default_kubernetes_metadata_config(),
         preserving_proto_field_name=True),
       '--beam_pipeline_args',
-      json.dumps(pipeline.beam_pipeline_args),
+      json.dumps(beam_pipeline_args),
       '--additional_pipeline_args',
-      json.dumps(pipeline.additional_pipeline_args),
+      json.dumps(additional_pipeline_args),
       '--component_launcher_class_path',
       component_launcher_class_path,
       '--serialized_component',
