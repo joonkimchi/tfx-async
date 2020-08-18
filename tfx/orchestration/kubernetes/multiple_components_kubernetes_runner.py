@@ -282,7 +282,7 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     """
     if not is_inside_cluster():
       return
-    pipeline.pipeline_info.run_id = c
+    pipeline.pipeline_info.run_id = datetime.datetime.now().isoformat()
     # Runs component in topological order
     for component in pipeline.components:
       logging.info('Launching %s' % component.id)

@@ -3,17 +3,16 @@ kind: Deployment
 metadata:
   name: controller
 spec:
-  automountServiceAccountToken: false
   replicas: 3
   selector:
     matchLabels:
       app: controller
-  serviceAccount: async-ksa
   template:
     metadata:
       labels:
         app: controller
     spec:
+      automountServiceAccountToken: false
       containers:
       - args:
         - --pipeline_name
@@ -21,7 +20,7 @@ spec:
         - --pipeline_root
         - gs://tfx-async-taxi/tfx-template/pipelines/chicago_taxi_kubernetes
         - --run_id
-        - '2020-08-17T13:34:59.944184'
+        - '2020-08-18T12:25:58.375705'
         - --beam_pipeline_args
         - '["--direct_num_workers=0"]'
         - --additional_pipeline_args
@@ -62,3 +61,11 @@ spec:
         - /tfx-async/tfx/orchestration/kubernetes/controller_entrypoint.py
         image: gcr.io/joonkim-experiments/tfx_dev:latest
         name: controller
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: async-ksa-token-2k2ls
+      serviceAccountName: async-ksa
+      volumes:
+      - name: async-ksa-token-2k2ls
+        secret:
+          secretName: async-ksa-token-2k2ls

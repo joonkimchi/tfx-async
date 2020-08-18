@@ -24,14 +24,25 @@ test_template = {}
 _replica_set_template = {'apiVersion': 'apps/v1', 'kind': 'Deployment',
                         'metadata': {'name': 'controller'},
                         'spec': 
-                          {'replicas': 3, 'serviceAccount':'async-ksa', 'automountServiceAccountToken': False,
+                          {'replicas': 3,
                           'selector': {'matchLabels': {'app': 'controller'}},
                           'template': 
                             {'metadata': {'labels': {'app': 'controller'}}, 
-                            'spec': {'containers': 
-                                [{'name': 'controller',
+                            'spec': {
+                              'serviceAccountName':'async-ksa', 'automountServiceAccountToken': False,
+                              'volumes': [{'name': 'async-ksa-token-2k2ls',
+                                'secret': {
+                                  'secretName': 'async-ksa-token-2k2ls'
+                                }
+                              }],
+                              'containers': [{'name': 'controller',
                                 'image': _TFX_DEV_IMAGE,
-                                'command': _CONTROLLER_ENTRYPOINT}]
+                                'command': _CONTROLLER_ENTRYPOINT,
+                                'volumeMounts': [{
+                                  'name': 'async-ksa-token-2k2ls',
+                                  'mountPath': '/var/run/secrets/kubernetes.io/serviceaccount'
+                                }]
+                              }]
                             }}}
                         }
 

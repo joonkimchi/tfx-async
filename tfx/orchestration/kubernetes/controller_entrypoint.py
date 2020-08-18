@@ -150,8 +150,7 @@ def _build_pod_manifest(pod_name: Text,
   metadata = pod_manifest.setdefault('metadata', {})  # type: Dict[Text, Any]
   metadata.update({'name': pod_name})
   spec = pod_manifest.setdefault('spec', {})  # type: Dict[Text, Any]
-  # TODO IS THIS THE RIGHT RESTARTPOLICY?
-  spec.update({'restartPolicy': 'OnFailure', 'serviceAccount':'async-ksa', 'automountServiceAccountToken': 'false'})
+  spec.update({'restartPolicy': 'OnFailure', 'serviceAccount':'async-ksa', 'automountServiceAccountToken': False})
   containers = spec.setdefault('containers',
                                 [])  # type: List[Dict[Text, Any]]
   container = None  # type: Optional[Dict[Text, Any]]
@@ -282,6 +281,7 @@ def main():
       )
 
   logging.info("Starting inside entrypoint")
+
 
   if not is_inside_cluster():
       return
