@@ -53,10 +53,6 @@ from tfx.utils import json_utils, kube_utils
 from google.protobuf import json_format
 import json
 
-import pathlib
-
-# LOCAL DOCKER TEST
-from tfx.orchestration.launcher import docker_component_launcher
 
 _TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev:latest'
 
@@ -85,11 +81,11 @@ def _sanitize_pod_name(pod_name: Text) -> Text:
   return re.sub(r'[-]+', '-', pod_name)
 
 
-def is_inside_cluster() -> bool:
+def is_outside_cluster() -> bool:
   """Determines if kubernetes runner is executed from within a cluster.
   Can be patched for testing purpose.
   """
-  return kube_utils.is_inside_cluster()
+  return kube_utils.is_outside_cluster()
 
 
 # Metadata config
@@ -153,11 +149,6 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
 
     serialized_component = utils.replace_placeholder(
         json_utils.dumps(node_wrapper.NodeWrapper(component)))
-      
-    logging.info('**SERIALIZE INSIDE POD MANIFEST***')
-    logging.info(serialized_component)
-
-    logging.info(pipeline.pipeline_info.run_id)
 
     arguments = [
         '--pipeline_name',
@@ -280,19 +271,19 @@ class MultCompKubernetesRunner(tfx_runner.TfxRunner):
     Args:
       pipeline: Logical pipeline containing pipeline args and components.
     """
-    if not is_inside_cluster():
-      return
+    if not is_outside_cluster():
+      raise RuntimeError('Failed to set up config outside cluster.')
+
     pipeline.pipeline_info.run_id = datetime.datetime.now().isoformat()
+    
     # Runs component in topological order
     for component in pipeline.components:
-      logging.info('Launching %s' % component.id)
-      logging.info('**TOP***')
-      logging.info(component.exec_properties)
       (component_launcher_class,
        component_config) = config_utils.find_component_launch_info(
            self._config, component)
 
-      # Do launching
+      # Launch process: create pod name, build pod manifest, check to see if
+      # pod with created name exists previously. If not, launch a new pod
       pod_name = self._build_pod_name(pipeline.pipeline_info, component.id)
       namespace = 'kubernetes'
       core_api = kube_utils.make_core_v1_api()

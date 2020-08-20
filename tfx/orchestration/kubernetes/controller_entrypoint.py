@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Definition of Beam TFX runner."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -54,7 +53,6 @@ from tfx.utils import json_utils, kube_utils
 from google.protobuf import json_format
 
 import json
-import pathlib
 import logging
 import argparse
 
@@ -112,9 +110,6 @@ def _build_pod_manifest(pod_name: Text,
 
   serialized_component = utils.replace_placeholder(
       json_utils.dumps(node_wrapper.NodeWrapper(component)))
-    
-  logging.info('**SERIALIZE INSIDE POD MANIFEST***')
-  logging.info(serialized_component)
 
   arguments = [
       '--pipeline_name',
@@ -280,14 +275,10 @@ def main():
           ],
       )
 
-  logging.info("Starting inside entrypoint")
-
-
   if not is_inside_cluster():
-      return
-
-  logging.info(args.serialized_components)
-
+    raise RuntimeError('Failed to set up config outside cluster.')
+  
+  # Converts stringified list of serialized components to list
   listified_components = ast.literal_eval(args.serialized_components)
     
   # Runs component in topological order
@@ -298,7 +289,8 @@ def main():
       component_config) = config_utils.find_component_launch_info(
           config, component)
 
-    # Do launching
+    # Launch process: create pod name, build pod manifest, check to see if
+    # pod with created name exists previously. If not, launch a new pod
     pod_name = _build_pod_name(args.pipeline_name, component.id)
     namespace = 'kubernetes'
     core_api = kube_utils.make_core_v1_api()

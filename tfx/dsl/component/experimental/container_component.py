@@ -26,8 +26,6 @@ from tfx.dsl.component.experimental import executor_specs
 from tfx.types import channel_utils
 from tfx.types import component_spec
 
-import absl
-
 
 def create_container_component(
     name: Text,
@@ -79,7 +77,7 @@ def create_container_component(
   """
   if not name:
     raise ValueError('Component name cannot be empty.')
-    
+
   if inputs is None:
     inputs = {}
   if outputs is None:

@@ -58,8 +58,6 @@ def main():
   args = parser.parse_args()
 
   component = json_utils.loads(args.serialized_component)
-  logging.info('***SERIALIZED INSIDE ENTRYPOINT***')
-  logging.info(component)
   component_config = json_utils.loads(args.component_config)
   component_launcher_class = import_utils.import_class_by_path(
       args.component_launcher_class_path)

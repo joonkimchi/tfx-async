@@ -17,10 +17,11 @@ import pathlib
 
 _TFX_DEV_IMAGE = 'gcr.io/joonkim-experiments/tfx_dev:latest'
 
+# This entrypoint command assumes image is built using Dockerfile in this directory.
 _CONTROLLER_ENTRYPOINT = ['python', '/tfx-async/tfx/orchestration/kubernetes/controller_entrypoint.py']
 
-
-test_template = {}
+# Dictionary template for yaml file. Must modify volume mounting
+# and service account based on personal credentials.
 _replica_set_template = {'apiVersion': 'apps/v1', 'kind': 'Deployment',
                         'metadata': {'name': 'controller'},
                         'spec': 
@@ -46,16 +47,30 @@ _replica_set_template = {'apiVersion': 'apps/v1', 'kind': 'Deployment',
                             }}}
                         }
 
+# Define root tfx directory. Must be modified based on working environment.
 _TFX_DIR = "/home/joonkim/TFX/project/tfx"
 
 def is_inside_cluster() -> bool:
   """Determines if kubernetes runner is executed from within a cluster.
   Can be patched for testing purpose.
   """
+
   return kube_utils.is_inside_cluster()
 
 class ControllerCompiler:
+  """Takes in a tfx pipeline to serialize every component and 
+  pipeline info including pipeline name, pipeline root, run id,
+  and beam pipeline args. Then populates an object with serialized 
+  information. Uses object to create a yaml file that can be used to
+  deploy a replica set controller that will launch components in cluster.
+  """
+
   def __init__(self, pipeline: tfx_pipeline.Pipeline):
+    """
+    Args:
+      pipeline: a TFX pipeline
+    """
+
     self._pipeline = pipeline
     self._serialized_components = []
     self._pipeline_params = {'pipeline_name': pipeline.pipeline_info.pipeline_name, 
@@ -68,20 +83,26 @@ class ControllerCompiler:
     Args:
       component: a TFX component.
     """
+
     serialized_component = utils.replace_placeholder(
         json_utils.dumps(node_wrapper.NodeWrapper(component)))
     self._serialized_components.append(serialized_component)
   
   def _parse_parameter_for_all_components(self) -> None:
+    """Loops through all components inside a pipeline and serializes them"""
+
     for component in self._pipeline.components:
       self._parse_parameter_from_component(component)
   
   def _parse_pipeline_parameter(self) -> None:
+    """Picks out pipeline specific variables and serializes to add to yaml object"""
+
     self._pipeline_params['run_id'] = datetime.datetime.now().isoformat()
     self._pipeline_params['beam_pipeline_args'] = json.dumps(self._pipeline.beam_pipeline_args)
     self._pipeline_params['additional_pipeline_args'] = json.dumps(self._pipeline.additional_pipeline_args)
 
   def _build_args_list(self) -> None:
+
     self.args_list = [
       '--pipeline_name',
       self._pipeline_params['pipeline_name'],
@@ -98,13 +119,16 @@ class ControllerCompiler:
     ]
 
   def _serialize_args(self) -> None:
+    """Combines serializing args + serializing pipeline info +
+    building args list for container spec"""
+
     self._parse_parameter_for_all_components()
     self._parse_pipeline_parameter()
     self._build_args_list()
-    return
 
 
   def _write_deployment_yaml(self) -> None:
+    
     _replica_set_template['spec']['template']['spec']['containers'][0]['args'] = self.args_list
     
     with open(os.path.join(_TFX_DIR, "tfx/orchestration/kubernetes/controller.yaml"), "w") as f:
@@ -112,6 +136,7 @@ class ControllerCompiler:
 
   
   def _apply_deployment_yaml(self) -> None:
+
     if not is_inside_cluster():
       return
     
@@ -120,7 +145,6 @@ class ControllerCompiler:
       apps_api = kube_utils.make_apps_v1_api()
       resp = apps_api.create_namespaced_deployment(
           body=dep, namespace="kubernetes")
-      absl.logging.info(resp)
       absl.logging.info("Deployment created. status='%s'" % resp.metadata.name)
 
 
@@ -128,4 +152,3 @@ class ControllerCompiler:
     self._serialize_args()
     self._write_deployment_yaml()
     self._apply_deployment_yaml()
-    return

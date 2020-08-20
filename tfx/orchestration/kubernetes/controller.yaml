@@ -20,7 +20,7 @@ spec:
         - --pipeline_root
         - gs://tfx-async-taxi/tfx-template/pipelines/chicago_taxi_kubernetes
         - --run_id
-        - '2020-08-18T12:25:58.375705'
+        - '2020-08-18T12:41:41.610557'
         - --beam_pipeline_args
         - '["--direct_num_workers=0"]'
         - --additional_pipeline_args

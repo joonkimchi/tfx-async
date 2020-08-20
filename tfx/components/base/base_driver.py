@@ -129,7 +129,6 @@ class BaseDriver(object):
       ValueError: if in interactive mode, the given input channels have not been
         resolved.
     """
-    absl.logging.info("****INSIDE BASE DRIVER****")
     result = {}
     for name, input_channel in input_dict.items():
       if driver_args.interactive_resolution:
@@ -146,9 +145,6 @@ class BaseDriver(object):
         result[name] = artifacts  
       else:
         try:
-          absl.logging.info("BASE DRIVER LOG ******")
-          absl.logging.info(input_channel)
-          absl.logging.info(input_channel.producer_component_id)
         # catch exception for AttributeError when no previous execution exists; skip to next iteration
           result[name] = self._metadata_handler.search_artifacts(
               artifact_name=input_channel.output_key,
@@ -252,7 +248,6 @@ class BaseDriver(object):
       return None
     # Sort and filter for the most recently updated artifact
     else:
-      absl.logging.info(input_artifacts)
       input_key = next(iter(input_artifacts))
       absl.logging.info(input_artifacts)
       input_artifacts[input_key] = [sorted(input_artifacts[input_key], 
@@ -280,14 +275,7 @@ class BaseDriver(object):
           pipeline_info=pipeline_info,
           component_info=component_info)
     if output_artifacts is not None:
-      # If cache should be used, updates execution to reflect that. Note that
-      # with this update, publisher should / will be skipped.
-      # self._metadata_handler.update_execution(
-      #     execution=execution,
-      #     component_info=component_info,
-      #     output_artifacts=output_artifacts,
-      #     execution_state=metadata.EXECUTION_STATE_CACHED,
-      #     contexts=contexts)
+      # Remove previous existing step in which artifact was updated as cached state.
       use_cached_results = True
       absl.logging.info("skipping publisher")
     else:

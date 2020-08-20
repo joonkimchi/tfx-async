@@ -43,8 +43,6 @@ class MultCompRunner(tfx_runner.TfxRunner):
       absl.logging.info(component_id)
       (component_launcher_class, 
       component_config) = config_utils.find_component_launch_info(self._config, component)
-      absl.logging.info('***NEW LOG***')
-      absl.logging.info(component_config)
 
       driver_args = data_types.DriverArgs()
       metadata_connection = metadata.Metadata(

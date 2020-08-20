@@ -74,8 +74,6 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
         component_id=component.id,
         pipeline_info=self._pipeline_info)
     self._driver_args = driver_args
-    absl.logging.info('****COMPONENT ID****')
-    absl.logging.info(component.id)
     if 'CsvExampleGen' in component.id:
       self._driver_class = example_gen_driver.Driver
     else:
@@ -162,8 +160,6 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
 
     with self._metadata_connection as m:
       driver = self._driver_class(metadata_handler=m)
-      absl.logging.info("***DRIVER CLASS***")
-      absl.logging.info(driver)
 
       execution_decision = driver.pre_execution(
           input_dict=input_dict,

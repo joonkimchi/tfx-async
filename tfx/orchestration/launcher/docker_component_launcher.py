@@ -29,11 +29,10 @@ from tfx.dsl.component.experimental import executor_specs
 from tfx.orchestration.config import base_component_config
 from tfx.orchestration.config import docker_component_config
 from tfx.orchestration.launcher import base_component_launcher
-from tfx.orchestration.launcher import base_component_launcher_2
 from tfx.orchestration.launcher import container_common
 
 
-class DockerComponentLauncher(base_component_launcher_2.BaseComponentLauncher2):
+class DockerComponentLauncher(base_component_launcher.BaseComponentLauncher):
   """Responsible for launching a container executor."""
 
   @classmethod

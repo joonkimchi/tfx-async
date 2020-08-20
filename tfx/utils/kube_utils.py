@@ -95,8 +95,15 @@ class _KubernetesClientFactory(object):
     if not self._config_loaded:
       absl.logging.info("Loading Config")
       self._LoadConfig()
-    return self._config_loaded
-    #return self._inside_cluster
+    return self._inside_cluster
+  
+  @property
+  def outside_cluster(self):
+    """Whether current environment is outside the kubernetes cluster."""
+    if not self._config_loaded:
+      absl.logging.info("Loading Config")
+      self._LoadConfig()
+    return not self._inside_cluster
 
   def _LoadConfig(self) -> None:  # pylint: disable=invalid-name
     """Load the kubernetes client config.
@@ -169,6 +176,11 @@ def make_apps_v1_api() -> k8s_client.AppsV1Api:
 def is_inside_cluster() -> bool:
   """Whether current running environment is inside the kubernetes cluster."""
   return _factory.inside_cluster
+
+
+def is_outside_cluster() -> bool:
+  """Whether current running environment is outside the kubernetes cluster."""
+  return _factory.outside_cluster
 
 
 def is_inside_kfp() -> bool:
