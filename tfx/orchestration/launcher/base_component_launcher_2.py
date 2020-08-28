@@ -34,6 +34,8 @@ from tfx.orchestration import metadata
 from tfx.orchestration import publisher
 from tfx.orchestration.config import base_component_config
 
+import coloredlogs, logging
+
 class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
   """Responsible for launching driver, executor and publisher of component."""
 
@@ -67,7 +69,6 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       ValueError: when component and component_config are not launchable by the
       launcher.
     """
-    absl.logging.info(component)
     self._pipeline_info = pipeline_info
     self._component_info = data_types.ComponentInfo(
         component_type=component.type,
@@ -173,7 +174,6 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
         absl.logging.info("Not running downstream component without upstream component execution")
         return None
         
-      absl.logging.info("***EXEC ID is %s.***", execution_decision.execution_id)
       return execution_decision
 
   @abc.abstractmethod
@@ -194,41 +194,63 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       p.publish_execution(
           component_info=self._component_info, output_artifacts=output_dict)
 
+  def _color_log(self, msg):
+    logger = logging.getLogger(__name__)
+    coloredlogs.install(level='DEBUG', logger=logger)
+    if self._component_info.component_id == 'CsvExampleGen':
+      logger.debug(msg)
+    elif self._component_info.component_id == 'Transform':
+      logger.success(msg)
+    elif self._component_info.component_id == 'StatisticsGen':
+      logger.error(msg)
+    elif self._component_info.component_id == 'SchemaGen':
+      logger.critical(msg)
+    else:
+      logger.warning(msg)
+
   def launch(self) -> data_types.ExecutionInfo:
     """Execute the component, includes driver, executor and publisher.
 
     Returns:
       The execution decision of the launch.
     """
+    _TIME_BETWEEN_INTERVAL = 5
+    if self._component_info.component_id == "StatisticsGen":
+      _TIME_BETWEEN_INTERVAL = 10
+    if self._component_info.component_id == "SchemaGen":
+      _TIME_BETWEEN_INTERVAL = 15
+    if self._component_info.component_id == "Transform":
+      _TIME_BETWEEN_INTERVAL = 20
+    if self._component_info.component_id == "Trainer":
+      _TIME_BETWEEN_INTERVAL = 30
+    
+
     while True:
-      absl.logging.info('New iteration')
-      absl.logging.info('Running driver for %s',
-                        self._component_info.component_id)
+      #absl.logging.info('Running driver for %s',
+      #                  self._component_info.component_id)
+      self._color_log(f"Running driver for {self._component_info.component_id}")
       
       execution_decision = self._run_driver(self._input_dict, self._output_dict,
                                             self._exec_properties)
       
       # case triggers when downstream node starts up without upstream node
       if execution_decision is None:
-        absl.logging.info('Skipping to next iteration')
-        time.sleep(10)
+        self._color_log('Skipping to next iteration')
+        time.sleep(_TIME_BETWEEN_INTERVAL)
         continue
 
       if not execution_decision.use_cached_results:
-        absl.logging.info('Running executor for %s',
-                          self._component_info.component_id)
+        self._color_log(f"Running executor for {self._component_info.component_id}")
+        # absl.logging.info('Running executor for %s',
+        #                   self._component_info.component_id)
         self._run_executor(execution_decision.execution_id,
                             execution_decision.input_dict,
                             execution_decision.output_dict,
                             execution_decision.exec_properties)
-
-      absl.logging.info('Running publisher for %s',
-                        self._component_info.component_id)
+      
+      self._color_log(f"Running publisher for {self._component_info.component_id}")
+      # absl.logging.info('Running publisher for %s',
+      #                   self._component_info.component_id)
       self._run_publisher(output_dict=execution_decision.output_dict)
-      time.sleep(10)
 
-#     return data_types.ExecutionInfo(
-#         input_dict=execution_decision.input_dict,
-#         output_dict=execution_decision.output_dict,
-#         exec_properties=execution_decision.exec_properties,
-#         execution_id=execution_decision.execution_id)
+      time.sleep(_TIME_BETWEEN_INTERVAL)

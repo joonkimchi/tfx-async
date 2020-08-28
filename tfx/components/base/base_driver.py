@@ -249,7 +249,7 @@ class BaseDriver(object):
     # Sort and filter for the most recently updated artifact
     else:
       input_key = next(iter(input_artifacts))
-      absl.logging.info(input_artifacts)
+      #absl.logging.info(input_artifacts)
       input_artifacts[input_key] = [sorted(input_artifacts[input_key], 
                                   key=lambda artifact: artifact.last_update_time_since_epoch)[-1]]
 

@@ -40,7 +40,6 @@ class MultCompRunner(tfx_runner.TfxRunner):
     tfx_pipeline.pipeline_info.run_id = datetime.datetime.now().isoformat()
     for component in tfx_pipeline.components:
       component_id = component.id
-      absl.logging.info(component_id)
       (component_launcher_class, 
       component_config) = config_utils.find_component_launch_info(self._config, component)
 
@@ -59,7 +58,7 @@ class MultCompRunner(tfx_runner.TfxRunner):
 
       self._component_id = component.id
       
-      absl.logging.info("Initiate component launch.")
+      absl.logging.info("Initiate component launch for %s", component_id)
 
       new_process = Process(target=self._launch_component, args=(self._component_launcher,))
       new_process.start()
