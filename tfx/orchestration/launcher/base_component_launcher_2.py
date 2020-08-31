@@ -160,7 +160,6 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
 
     with self._metadata_connection as m:
       driver = self._driver_class(metadata_handler=m)
-
       execution_decision = driver.pre_execution(
           input_dict=input_dict,
           output_dict=output_dict,
@@ -194,6 +193,16 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       p.publish_execution(
           component_info=self._component_info, output_artifacts=output_dict)
 
+  def _get_sleep_time_per_component(self, component):
+    sleep_time = 10
+    if 'SchemaGen' == component:
+      sleep_time = 25
+    elif 'Transform' == component:
+      sleep_time = 40
+    elif 'Trainer' == component:
+      sleep_time = 60
+    return sleep_time
+
   def launch(self) -> data_types.ExecutionInfo:
     """Execute the component, includes driver, executor and publisher.
 
@@ -211,12 +220,14 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       # case triggers when downstream node starts up without upstream node
       if execution_decision is None:
         absl.logging.info('Skipping to next iteration')
-        time.sleep(10)
+        time.sleep(self._get_sleep_time_per_component(self._component_info.component_id))
         continue
 
       if not execution_decision.use_cached_results:
         absl.logging.info('Running executor for %s',
                           self._component_info.component_id)
+        if self._component_info.component_id != 'CsvExampleGen':
+          time.sleep(30)
         self._run_executor(execution_decision.execution_id,
                             execution_decision.input_dict,
                             execution_decision.output_dict,
@@ -225,10 +236,4 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
         absl.logging.info('Running publisher for %s',
                           self._component_info.component_id)
         self._run_publisher(output_dict=execution_decision.output_dict)
-      time.sleep(10)
-
-#     return data_types.ExecutionInfo(
-#         input_dict=execution_decision.input_dict,
-#         output_dict=execution_decision.output_dict,
-#         exec_properties=execution_decision.exec_properties,
-#         execution_id=execution_decision.execution_id)
+      time.sleep(self._get_sleep_time_per_component(self._component_info.component_id))

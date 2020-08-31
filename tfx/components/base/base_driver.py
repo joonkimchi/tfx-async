@@ -242,7 +242,6 @@ class BaseDriver(object):
                                                    component_info)
     input_artifacts = self.resolve_input_artifacts(input_dict, exec_properties,
                                                    driver_args, pipeline_info)
-    
     # Step 1.5 If no upstream node execution ready yet, skip to next iteration
     if input_artifacts is None:
       return None

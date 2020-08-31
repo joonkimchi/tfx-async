@@ -63,7 +63,7 @@ input = example_gen_pb2.Input(splits=[
             ])
 # Python module file to inject customized logic into the TFX components. The
 # Transform and Trainer both require user-defined functions to run successfully.
-_module_file = os.path.join(_taxi_root, 'taxi_utils.py')
+_module_file = '/home/joonkim/TFX/project/tfx/examples/chicago_taxi_pipeline/taxi_utils.py'
 # Path which can be listened to by the model server.  Pusher will output the
 # trained model here.
 _serving_model_dir = os.path.join(_taxi_root, 'serving_model', _pipeline_name)
@@ -184,7 +184,7 @@ def _create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
 # To run this pipeline from the python CLI:
 #   $python taxi_pipeline_beam.py
 if __name__ == '__main__':
-  absl.logging.set_verbosity(absl.logging.WARNING)
+  absl.logging.set_verbosity(absl.logging.INFO)
 
   MultCompRunner().run(
     _create_pipeline(

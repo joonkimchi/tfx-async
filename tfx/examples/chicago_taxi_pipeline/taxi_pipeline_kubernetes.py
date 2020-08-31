@@ -50,8 +50,7 @@ _pipeline_name = 'chicago_taxi_kubernetes'
 # This example assumes that the taxi data is stored in a google cloud storage bucket
 # named tfx-async-taxi under tfx-template/data and the taxi utility function
 # is in the local tfx-src path.  Feel free to customize this as needed.
-_taxi_root = os.path.join('/', 'TFX', 'project', 'tfx', 'tfx', 'examples',
-                          'chicago_taxi_pipeline')
+_taxi_root = '/tfx-async/tfx/examples/chicago_taxi_pipeline'
 _data_root = 'gs://tfx-async-taxi/tfx-template/data'
 # Python module file to inject customized logic into the TFX components. The
 # Transform and Trainer both require user-defined functions to run successfully.

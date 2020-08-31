@@ -55,8 +55,6 @@ class Driver(base_driver.BaseDriver):
 
     input_dict = channel_utils.unwrap_channel_dict(input_channels)
     input_dict = copy.deepcopy(input_dict)
-    absl.logging.warning('****INPUT DICT BEFORE*****')
-    absl.logging.warning(input_dict)
     for input_list in input_dict.values():
       for single_input in input_list:
         absl.logging.debug('Processing input %s.' % single_input.uri)
@@ -87,12 +85,8 @@ class Driver(base_driver.BaseDriver):
           single_input.set_mlmd_artifact(latest_artifact)
         else:
           # TODO(jyzhao): whether driver should be read-only for metadata.
-          self._metadata_handler.publish_artifacts([single_input])
-          absl.logging.warning('*****RUNNING NEW CODE*****')
-          absl.logging.warning('Registered new input: %s' % single_input)
+          self._metadata_handler.publish_artifacts([single_input]) 
 
     exec_properties['input_config'] = json_format.MessageToJson(
         input_config, sort_keys=True, preserving_proto_field_name=True)
-    absl.logging.warning('****Printing input dict****')
-    absl.logging.warning(input_dict)
     return input_dict
