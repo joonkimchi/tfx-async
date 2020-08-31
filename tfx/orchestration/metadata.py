@@ -653,7 +653,6 @@ class Metadata(object):
             _CONTEXT_TYPE_KEY_RUN_ID: pipeline_info.run_id,
             _CONTEXT_TYPE_KEY_COMPONENT_ID: component_info.component_id
         })
-    absl.logging.info("Component run id is %s.", component_run_context.id)
     # Tries to register the execution along with a component run context. If the
     # context already exists, reuse the context and update the existing
     # execution.

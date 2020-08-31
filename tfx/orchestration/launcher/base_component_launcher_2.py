@@ -222,9 +222,9 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
                             execution_decision.output_dict,
                             execution_decision.exec_properties)
 
-      absl.logging.info('Running publisher for %s',
-                        self._component_info.component_id)
-      self._run_publisher(output_dict=execution_decision.output_dict)
+        absl.logging.info('Running publisher for %s',
+                          self._component_info.component_id)
+        self._run_publisher(output_dict=execution_decision.output_dict)
       time.sleep(10)
 
 #     return data_types.ExecutionInfo(
