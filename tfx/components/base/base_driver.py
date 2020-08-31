@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Text
 
 import absl
 import tensorflow as tf
+import copy
 
 from tfx import types
 from tfx.orchestration import data_types
@@ -192,6 +193,7 @@ class BaseDriver(object):
   ) -> Dict[Text, List[types.Artifact]]:
     """Prepare output artifacts by assigning uris to each artifact."""
     result = channel_utils.unwrap_channel_dict(output_dict)
+    result = copy.deepcopy(result)
     base_output_dir = os.path.join(pipeline_info.pipeline_root,
                                    component_info.component_id)
     for name, output_list in result.items():
@@ -242,16 +244,19 @@ class BaseDriver(object):
                                                    component_info)
     input_artifacts = self.resolve_input_artifacts(input_dict, exec_properties,
                                                    driver_args, pipeline_info)
-    
     # Step 1.5 If no upstream node execution ready yet, skip to next iteration
     if input_artifacts is None:
       return None
     # Sort and filter for the most recently updated artifact
     else:
-      input_key = next(iter(input_artifacts))
-      absl.logging.info(input_artifacts)
-      input_artifacts[input_key] = [sorted(input_artifacts[input_key], 
-                                  key=lambda artifact: artifact.last_update_time_since_epoch)[-1]]
+      listified_artifacts = iter(input_artifacts)
+      input_key = next(listified_artifacts)
+      while input_key != None and isinstance(input_artifacts[input_key], list):
+        input_artifacts[input_key] = [sorted(input_artifacts[input_key], 
+                                    key=lambda artifact: artifact.last_update_time_since_epoch)[-1]]
+        input_key = next(listified_artifacts, None)
+        if component_info.component_id == 'Transform' or component_info.component_id == 'Trainer':
+          absl.logging.warning(input_artifacts)
 
     self.verify_input_artifacts(artifacts_dict=input_artifacts)
     absl.logging.debug('Resolved input artifacts are: %s', input_artifacts)
@@ -275,14 +280,7 @@ class BaseDriver(object):
           pipeline_info=pipeline_info,
           component_info=component_info)
     if output_artifacts is not None:
-      # If cache should be used, updates execution to reflect that. Note that
-      # with this update, publisher should / will be skipped.
-      self._metadata_handler.update_execution(
-          execution=execution,
-          component_info=component_info,
-          output_artifacts=output_artifacts,
-          execution_state=metadata.EXECUTION_STATE_CACHED,
-          contexts=contexts)
+      # Remove previous existing step in which artifact was updated as cached state.
       use_cached_results = True
       absl.logging.info("skipping publisher")
     else:

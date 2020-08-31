@@ -21,6 +21,7 @@ from __future__ import print_function
 from typing import Any, Dict, List, Text
 
 import absl
+import copy
 
 from google.protobuf import json_format
 from tfx import types
@@ -48,11 +49,12 @@ class Driver(base_driver.BaseDriver):
     """Overrides BaseDriver.resolve_input_artifacts()."""
     del driver_args  # unused
     del pipeline_info  # unused
-
+    
     input_config = example_gen_pb2.Input()
     json_format.Parse(exec_properties['input_config'], input_config)
 
     input_dict = channel_utils.unwrap_channel_dict(input_channels)
+    input_dict = copy.deepcopy(input_dict)
     for input_list in input_dict.values():
       for single_input in input_list:
         absl.logging.debug('Processing input %s.' % single_input.uri)
@@ -69,12 +71,6 @@ class Driver(base_driver.BaseDriver):
                                                 select_span)
 
         matched_artifacts = []
-        for artifact in self._metadata_handler.get_artifacts_by_uri(
-            single_input.uri):
-          if (artifact.custom_properties[utils.FINGERPRINT_PROPERTY_NAME]
-              .string_value == fingerprint) and (artifact.custom_properties[
-                  utils.SPAN_PROPERTY_NAME].string_value == select_span):
-            matched_artifacts.append(artifact)
 
         if matched_artifacts:
           # TODO(b/138845899): consider use span instead of id.
@@ -89,8 +85,7 @@ class Driver(base_driver.BaseDriver):
           single_input.set_mlmd_artifact(latest_artifact)
         else:
           # TODO(jyzhao): whether driver should be read-only for metadata.
-          self._metadata_handler.publish_artifacts([single_input])
-          absl.logging.debug('Registered new input: %s' % single_input)
+          self._metadata_handler.publish_artifacts([single_input]) 
 
     exec_properties['input_config'] = json_format.MessageToJson(
         input_config, sort_keys=True, preserving_proto_field_name=True)

@@ -52,6 +52,8 @@ from tfx.types import artifact_utils
 from tfx.utils import import_utils
 from tfx.utils import io_utils
 
+from tfx.examples.chicago_taxi_pipeline import taxi_utils
+
 # Key for examples in executor input_dict.
 EXAMPLES_KEY = 'examples'
 # Key for schema in executor input_dict.
@@ -780,9 +782,10 @@ class Executor(base_executor.BaseExecutor):
           'supplied in inputs.')
 
     if has_module_file:
-      return import_utils.import_func_from_source(
-          value_utils.GetSoleValue(inputs, labels.MODULE_FILE),
-          'preprocessing_fn')
+      return taxi_utils.preprocessing_fn
+      # return import_utils.import_func_from_source(
+      #     value_utils.GetSoleValue(inputs, labels.MODULE_FILE),
+      #     'preprocessing_fn')
 
     preprocessing_fn_path_split = value_utils.GetSoleValue(
         inputs, labels.PREPROCESSING_FN).split('.')

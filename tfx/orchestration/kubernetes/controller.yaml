@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: controller
+  template:
+    metadata:
+      labels:
+        app: controller
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --pipeline_name
+        - chicago_taxi_kubernetes
+        - --pipeline_root
+        - gs://tfx-async-taxi/tfx-template/pipelines/chicago_taxi_kubernetes
+        - --run_id
+        - '2020-08-18T12:41:41.610557'
+        - --beam_pipeline_args
+        - '["--direct_num_workers=0"]'
+        - --additional_pipeline_args
+        - '{}'
+        - --serialized_components
+        - '[''{"__class__": "NodeWrapper", "__module__": "tfx.orchestration.kubeflow.node_wrapper",
+          "__tfx_object_type__": "jsonable", "_exec_properties": {"custom_config":
+          null, "input_config": "{\\n  \\"splits\\": [\\n    {\\n      \\"name\\":
+          \\"train\\",\\n      \\"pattern\\": \\"span{SPAN}/train/*\\"\\n    },\\n    {\\n      \\"name\\":
+          \\"eval\\",\\n      \\"pattern\\": \\"span{SPAN}/eval/*\\"\\n    }\\n  ]\\n}",
+          "output_config": "{}"}, "_id": "CsvExampleGen", "_inputs": {"__class__":
+          "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__":
+          "jsonable", "_compat_aliases": {"input_base": "input"}, "_data": {"input":
+          {"__class__": "Channel", "__module__": "tfx.types.channel", "__tfx_object_type__":
+          "jsonable", "artifacts": [{"__artifact_class_module__": "tfx.types.standard_artifacts",
+          "__artifact_class_name__": "ExternalArtifact", "artifact": {"uri": "gs://tfx-async-taxi/tfx-template/data"},
+          "artifact_type": {"name": "ExternalArtifact"}}], "output_key": null, "producer_component_id":
+          null, "type": {"name": "ExternalArtifact"}}}}, "_outputs": {"__class__":
+          "_PropertyDictWrapper", "__module__": "tfx.types.node_common", "__tfx_object_type__":
+          "jsonable", "_compat_aliases": {}, "_data": {"examples": {"__class__": "Channel",
+          "__module__": "tfx.types.channel", "__tfx_object_type__": "jsonable", "artifacts":
+          [{"__artifact_class_module__": "tfx.types.standard_artifacts", "__artifact_class_name__":
+          "Examples", "artifact": {"custom_properties": {"name": {"string_value":
+          "examples"}, "pipeline_name": {"string_value": "chicago_taxi_kubernetes"},
+          "producer_component": {"string_value": "CsvExampleGen"}}, "properties":
+          {"split_names": {"string_value": "[\\"train\\", \\"eval\\"]"}}}, "artifact_type":
+          {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}],
+          "output_key": "examples", "producer_component_id": "CsvExampleGen", "type":
+          {"name": "Examples", "properties": {"span": "INT", "split_names": "STRING"}}}}},
+          "_type": "tfx.components.example_gen.csv_example_gen.component.CsvExampleGen",
+          "driver_class": {"__class__": "Driver", "__module__": "tfx.components.example_gen.driver",
+          "__tfx_object_type__": "class"}, "executor_spec": {"__class__": "ExecutorClassSpec",
+          "__module__": "tfx.components.base.executor_spec", "__tfx_object_type__":
+          "jsonable", "executor_class": {"__class__": "Executor", "__module__": "tfx.components.example_gen.csv_example_gen.executor",
+          "__tfx_object_type__": "class"}}}'']'
+        command:
+        - python
+        - /tfx-async/tfx/orchestration/kubernetes/controller_entrypoint.py
+        image: gcr.io/joonkim-experiments/tfx_dev:latest
+        name: controller
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: async-ksa-token-2k2ls
+      serviceAccountName: async-ksa
+      volumes:
+      - name: async-ksa-token-2k2ls
+        secret:
+          secretName: async-ksa-token-2k2ls

@@ -28,11 +28,11 @@ from six import with_metaclass
 from tfx import types
 from tfx.components.base import base_node
 from tfx.components.base import executor_spec
+from tfx.components.example_gen import driver as example_gen_driver
 from tfx.orchestration import data_types
 from tfx.orchestration import metadata
 from tfx.orchestration import publisher
 from tfx.orchestration.config import base_component_config
-
 
 class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
   """Responsible for launching driver, executor and publisher of component."""
@@ -74,8 +74,10 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
         component_id=component.id,
         pipeline_info=self._pipeline_info)
     self._driver_args = driver_args
-
-    self._driver_class = component.driver_class
+    if 'CsvExampleGen' in component.id:
+      self._driver_class = example_gen_driver.Driver
+    else:
+      self._driver_class = component.driver_class
     self._component_executor_spec = component.executor_spec
 
     self._input_dict = component.inputs.get_all()
@@ -158,7 +160,6 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
 
     with self._metadata_connection as m:
       driver = self._driver_class(metadata_handler=m)
-
       execution_decision = driver.pre_execution(
           input_dict=input_dict,
           output_dict=output_dict,
@@ -192,6 +193,16 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       p.publish_execution(
           component_info=self._component_info, output_artifacts=output_dict)
 
+  def _get_sleep_time_per_component(self, component):
+    sleep_time = 10
+    if 'SchemaGen' == component:
+      sleep_time = 25
+    elif 'Transform' == component:
+      sleep_time = 40
+    elif 'Trainer' == component:
+      sleep_time = 60
+    return sleep_time
+
   def launch(self) -> data_types.ExecutionInfo:
     """Execute the component, includes driver, executor and publisher.
 
@@ -209,24 +220,20 @@ class BaseComponentLauncher2(with_metaclass(abc.ABCMeta, object)):
       # case triggers when downstream node starts up without upstream node
       if execution_decision is None:
         absl.logging.info('Skipping to next iteration')
-        time.sleep(10)
+        time.sleep(self._get_sleep_time_per_component(self._component_info.component_id))
         continue
 
       if not execution_decision.use_cached_results:
         absl.logging.info('Running executor for %s',
                           self._component_info.component_id)
+        if self._component_info.component_id != 'CsvExampleGen':
+          time.sleep(30)
         self._run_executor(execution_decision.execution_id,
                             execution_decision.input_dict,
                             execution_decision.output_dict,
                             execution_decision.exec_properties)
 
-      absl.logging.info('Running publisher for %s',
-                        self._component_info.component_id)
-      self._run_publisher(output_dict=execution_decision.output_dict)
-      time.sleep(10)
-
-#     return data_types.ExecutionInfo(
-#         input_dict=execution_decision.input_dict,
-#         output_dict=execution_decision.output_dict,
-#         exec_properties=execution_decision.exec_properties,
-#         execution_id=execution_decision.execution_id)
+        absl.logging.info('Running publisher for %s',
+                          self._component_info.component_id)
+        self._run_publisher(output_dict=execution_decision.output_dict)
+      time.sleep(self._get_sleep_time_per_component(self._component_info.component_id))

@@ -24,6 +24,7 @@ from typing import Text
 
 from kubernetes import client as k8s_client
 from kubernetes import config as k8s_config
+import absl
 
 # Name of the main container that Argo workflow launches. As KFP internally uses
 # Argo, container name for the KFP Pod is also the same.
@@ -51,6 +52,10 @@ class PodPhase(enum.Enum):
   @property
   def is_done(self):
     return self == self.SUCCEEDED or self == self.FAILED
+  
+  @property
+  def is_running(self):
+    return self == self.RUNNING
 
 
 class RestartPolicy(enum.Enum):
@@ -88,8 +93,17 @@ class _KubernetesClientFactory(object):
   def inside_cluster(self):
     """Whether current environment is inside the kubernetes cluster."""
     if not self._config_loaded:
+      absl.logging.info("Loading Config")
       self._LoadConfig()
     return self._inside_cluster
+  
+  @property
+  def outside_cluster(self):
+    """Whether current environment is outside the kubernetes cluster."""
+    if not self._config_loaded:
+      absl.logging.info("Loading Config")
+      self._LoadConfig()
+    return not self._inside_cluster
 
   def _LoadConfig(self) -> None:  # pylint: disable=invalid-name
     """Load the kubernetes client config.
@@ -121,6 +135,7 @@ class _KubernetesClientFactory(object):
       # filename from the KUBECONFIG environment variable.
       # It will raise kubernetes.config.ConfigException if no kube config file
       # is found.
+      absl.logging.info("Not inside cluster. Loading config out of cluster")
       self._inside_cluster = False
       k8s_config.load_kube_config()
 
@@ -131,8 +146,21 @@ class _KubernetesClientFactory(object):
     if not self._config_loaded:
       self._LoadConfig()
     return k8s_client.CoreV1Api()
+  
+  def MakeAppsV1Api(self) -> k8s_client.AppsV1Api:
+    """Make a kubernetes CoreV1Api client."""
+    if not self._config_loaded:
+      self._LoadConfig()
+    return k8s_client.AppsV1Api()
+
 
 _factory = _KubernetesClientFactory()
+
+
+def _sanitize_pod_name(pod_name: Text) -> Text:
+  pod_name = re.sub(r'[^a-z0-9-]', '-', pod_name.lower())
+  pod_name = re.sub(r'^[-]+', '', pod_name)
+  return re.sub(r'[-]+', '-', pod_name)
 
 
 def make_core_v1_api() -> k8s_client.CoreV1Api:
@@ -140,9 +168,19 @@ def make_core_v1_api() -> k8s_client.CoreV1Api:
   return _factory.MakeCoreV1Api()
 
 
+def make_apps_v1_api() -> k8s_client.AppsV1Api:
+  """Make a kubernetes AppsV1Api client."""
+  return _factory.MakeAppsV1Api()
+
+
 def is_inside_cluster() -> bool:
   """Whether current running environment is inside the kubernetes cluster."""
   return _factory.inside_cluster
+
+
+def is_outside_cluster() -> bool:
+  """Whether current running environment is outside the kubernetes cluster."""
+  return _factory.outside_cluster
 
 
 def is_inside_kfp() -> bool:

@@ -38,6 +38,8 @@ from tfx.utils import io_utils
 from tfx.utils import json_utils
 from tfx.utils import path_utils
 
+from tfx.examples.chicago_taxi_pipeline import taxi_utils
+
 
 def _all_files_pattern(file_pattern: Text) -> Text:
   return os.path.join(file_pattern, '*')
@@ -201,7 +203,8 @@ class GenericExecutor(base_executor.BaseExecutor):
     self._log_startup(input_dict, output_dict, exec_properties)
 
     fn_args = self._GetFnArgs(input_dict, output_dict, exec_properties)
-    run_fn = udf_utils.get_fn(exec_properties, 'run_fn')
+    run_fn = taxi_utils.trainer_fn
+    #run_fn = udf_utils.get_fn(exec_properties, 'run_fn')
 
     # Train the model
     absl.logging.info('Training model.')
@@ -267,7 +270,8 @@ class Executor(GenericExecutor):
     self._log_startup(input_dict, output_dict, exec_properties)
 
     fn_args = self._GetFnArgs(input_dict, output_dict, exec_properties)
-    trainer_fn = udf_utils.get_fn(exec_properties, 'trainer_fn')
+    trainer_fn = taxi_utils.trainer_fn
+    #trainer_fn = udf_utils.get_fn(exec_properties, 'trainer_fn')
 
     schema = io_utils.parse_pbtxt_file(fn_args.schema_file, schema_pb2.Schema())
 
