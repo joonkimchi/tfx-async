@@ -184,7 +184,7 @@ def _create_pipeline(pipeline_name: Text, pipeline_root: Text, data_root: Text,
 # To run this pipeline from the python CLI:
 #   $python taxi_pipeline_beam.py
 if __name__ == '__main__':
-  absl.logging.set_verbosity(absl.logging.INFO)
+  absl.logging.set_verbosity(absl.logging.WARNING)
 
   MultCompRunner().run(
     _create_pipeline(

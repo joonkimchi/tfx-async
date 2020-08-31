@@ -889,7 +889,7 @@ class Metadata(object):
     Raises:
       RuntimeError: when no matching execution is found given producer info.
     """
-    producer_execution = None
+    producer_execution = []
     matching_artifact_ids = set()
     # TODO(ruoyu): We need to revisit this when adding support for async
     # execution.
@@ -900,16 +900,15 @@ class Metadata(object):
       if execution.properties[
           'component_id'].string_value == producer_component_id and execution.properties[
           _EXECUTION_TYPE_KEY_STATE].string_value == tf.compat.as_text(EXECUTION_STATE_COMPLETE):
-        producer_execution = execution
-        break
+        producer_execution.append(execution)
     if not producer_execution:
       absl.logging.info('Cannot find valid execution')
       raise RuntimeError('Cannot find matching execution with pipeline name %s,'
                          'run id %s and component id %s' %
                          (pipeline_info.pipeline_name, pipeline_info.run_id,
                           producer_component_id))
-    for event in self.store.get_events_by_execution_ids([producer_execution.id
-                                                        ]):
+    for event in self.store.get_events_by_execution_ids(
+        [execution.id for execution in producer_execution]):
       if (event.type == metadata_store_pb2.Event.OUTPUT and
           event.path.steps[0].key == artifact_name):
         matching_artifact_ids.add(event.artifact_id)
